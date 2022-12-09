@@ -30,6 +30,9 @@ local plane_ped = 0
 local plane_veh = 0
 local is_plane_active = false
 
+local trans_veh_name = "sanchez2"
+local trans_veh_hash = gameplay.get_hash_key(trans_veh_name)
+
 local function get_free_seats(veh)
     local veh_hash = entity.get_entity_model_hash(veh)
     local seat_count = vehicle.get_vehicle_model_number_of_seats(veh_hash)
@@ -157,8 +160,8 @@ end
 
 local airstrips = {
     {
-        start1={x=-1572.8286132812, y=-3007.3989257812, z=12.94482421875}, 
-        end1={x=-1195.5294189453, y=-3223.857421875, z=12.944519042969},
+        start1={x=-1607.3388671875, y=-2792.3530273438, z=13.976312637329}, 
+        end1={x=-1037.4422607422, y=-3121.7915039062, z=13.944439888},
         name="LS International Airport"
     },
     {
@@ -192,6 +195,30 @@ local select_strip = menu.add_feature("Destination","autoaction_value_str",main_
 end)
 select_strip:set_str_data(select_data)
 select_strip.hint = "Select the airstrip to land at. \nMcKenzie Field is unsafe cuz too small runway (high risk of crash)"
+
+local trans_vehicle = menu.add_feature("Transport Vehicle = [sanchez2]","action",main_menu.id,function()
+    local status = 1
+    while status == 1 do
+        status, trans_veh_name = input.get("Name/Hash Input","",15,2)
+        system.yield(0)
+    end
+    trans_veh_hash = gameplay.get_hash_key(trans_veh_name)
+
+    if not streaming.is_model_a_vehicle(trans_veh_hash) then
+        trans_veh_hash = tonumber(trans_veh_name)
+    end
+
+    if not streaming.is_model_a_vehicle(trans_veh_hash) then
+        menu.notify("Warning! Vehicle model doesn't exist!","!WARNING!",nil,0x0000FF)
+    end
+
+    ft.name = "Transport Vehicle = ["..trans_veh_name.."]"
+end)
+trans_vehicle.hint = "Set the model for the Transport Vehicle (See below for explanation)"
+
+local trans_vehicle_toggle = menu.add_feature("Transport Vehicle","toggle",main_menu.id,function()
+end)
+trans_vehicle_toggle.hint = "The Transport Vehicle spawns at your destination, right after the plane itself despawns. \nUseful to get out of airport more easily!"
 
 local spawn_plane = menu.add_feature("Spawn Plane","action",main_menu.id,function()
     local dest = airstrips[select_strip.value+1]
@@ -332,9 +359,24 @@ local spawn_plane = menu.add_feature("Spawn Plane","action",main_menu.id,functio
 
     system.yield(5000)
 
+    local last_plane_coord = entity.get_entity_coords(plane_veh)
+    local last_plane_heading = entity.get_entity_heading(plane_veh)
+
     clear_all(nil, true, true)
     
     menu.notify("Thanks you for using JJS Airline!","Thanks You!",nil,0x00AAFF)
+
+    if trans_vehicle_toggle.on then
+        system.yield(1000)
+
+        request_model(trans_veh_hash)
+        local trans_veh_veh = vehicle.create_vehicle(trans_veh_hash, last_plane_coord, last_plane_heading, true, false)
+        system.yield(0)
+        vehicle.set_vehicle_on_ground_properly(trans_veh_veh)
+        streaming.set_model_as_no_longer_needed(trans_veh_hash)
+
+        menu.notify("Your Transport Vehicle has been delivered!","Delivered",nil,0x00FF00)
+    end
     is_plane_active = false
 end)
 spawn_plane.hint = "Spawns your private jet , waiting for you to get inside!"
