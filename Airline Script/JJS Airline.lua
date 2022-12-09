@@ -22,7 +22,8 @@ function vector_to_heading(_target,_start)
     return math.atan((_target.x - _start.x), (_target.y - _start.y)) * -180 / math.pi
 end
 
-local plane_hash = gameplay.get_hash_key("luxor2")
+local plane_name = "luxor2"
+local plane_hash = gameplay.get_hash_key(plane_name)
 local ped_hash = 988062523
 
 local blips = {}
@@ -170,10 +171,10 @@ local airstrips = {
         name="Sandy Shores Airfield"
     },
     {
-        start1={x=1930.5744628906, y=4713.5478515625, z=41.147357940674},
-        end1={x=2133.5227050781, y=4810.1083984375, z=41.195930480957},
+        start1={x=2133.5227050781, y=4810.1083984375, z=41.195930480957},
+        end1={x=1930.5744628906, y=4713.5478515625, z=41.147357940674},
         name="McKenzie Field (UNSAFE)",
-        land_alt_override = 30,
+        land_alt_override = 15,
         land_speed_override = 100
     },
     {
@@ -196,7 +197,7 @@ end)
 select_strip:set_str_data(select_data)
 select_strip.hint = "Select the airstrip to land at. \nMcKenzie Field is unsafe cuz too small runway (high risk of crash)"
 
-local trans_vehicle = menu.add_feature("Transport Vehicle = [sanchez2]","action",main_menu.id,function()
+local trans_vehicle = menu.add_feature("Transport Vehicle = [sanchez2]","action",main_menu.id,function(ft)
     local status = 1
     while status == 1 do
         status, trans_veh_name = input.get("Name/Hash Input","",15,2)
@@ -219,6 +220,26 @@ trans_vehicle.hint = "Set the model for the Transport Vehicle (See below for exp
 local trans_vehicle_toggle = menu.add_feature("Transport Vehicle","toggle",main_menu.id,function()
 end)
 trans_vehicle_toggle.hint = "The Transport Vehicle spawns at your destination, right after the plane itself despawns. \nUseful to get out of airport more easily!"
+
+local plane_select = menu.add_feature("Plane Model = [luxor2]","action",main_menu.id,function(ft)
+    local status = 1
+    while status == 1 do
+        status, plane_name = input.get("Name/Hash Input","",15,2)
+        system.yield(0)
+    end
+    plane_hash = gameplay.get_hash_key(plane_name)
+
+    if not streaming.is_model_a_vehicle(plane_hash) then
+        plane_hash = tonumber(plane_name)
+    end
+
+    if not streaming.is_model_a_vehicle(plane_hash) then
+        menu.notify("Warning! Vehicle model doesn't exist!","!WARNING!",nil,0x0000FF)
+    end
+
+    ft.name = "Plane Model = ["..plane_name.."]"
+end)
+plane_select.hint = "Set the model for your plane.\nMight not work well with every plane (GTA's AI at fault lol)"
 
 local spawn_plane = menu.add_feature("Spawn Plane","action",main_menu.id,function()
     local dest = airstrips[select_strip.value+1]
@@ -317,7 +338,7 @@ local spawn_plane = menu.add_feature("Spawn Plane","action",main_menu.id,functio
         system.yield(0)
     end
 
-    ai.task_vehicle_drive_to_coord(plane_ped, plane_veh, landstart_start+v3(0,0,dest.land_alt_override or 100), dest.land_speed_override or 300, 0, plane_hash, 0, 200,0)
+    ai.task_vehicle_drive_to_coord(plane_ped, plane_veh, landstart_start+v3(0,0,dest.land_alt_override or 75), dest.land_speed_override or 300, 0, plane_hash, 0, 200,0)
 
     menu.notify("Preparing to Land at Dest!","Landing Prep",nil,0x00AAFF)
 
@@ -376,6 +397,18 @@ local spawn_plane = menu.add_feature("Spawn Plane","action",main_menu.id,functio
         streaming.set_model_as_no_longer_needed(trans_veh_hash)
 
         menu.notify("Your Transport Vehicle has been delivered!","Delivered",nil,0x00FF00)
+
+        vehicle.set_vehicle_mod_kit_type(trans_veh_veh, 0)
+
+        vehicle.set_vehicle_colors(trans_veh_veh, 12, 12)
+        vehicle.set_vehicle_extra_colors(trans_veh_veh, 64, 62)
+        vehicle.set_vehicle_window_tint(trans_veh_veh, 1)
+
+        vehicle.set_vehicle_mod(trans_veh_veh, 11, 3)
+        vehicle.set_vehicle_mod(trans_veh_veh, 15, 3)
+        vehicle.set_vehicle_mod(trans_veh_veh, 16, 4)
+        vehicle.set_vehicle_mod(trans_veh_veh, 12, 2)
+        vehicle.set_vehicle_mod(trans_veh_veh, 18, 1)
     end
     is_plane_active = false
 end)
