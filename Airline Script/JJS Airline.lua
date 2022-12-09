@@ -186,11 +186,12 @@ for k,v in ipairs(airstrips) do
 end
 
 
-local main_menu = menu.add_feature("Plane Test", "parent", 0)
+local main_menu = menu.add_feature("JJS Airline", "parent", 0)
 
 local select_strip = menu.add_feature("Destination","autoaction_value_str",main_menu.id,function()
 end)
 select_strip:set_str_data(select_data)
+select_strip.hint = "Select the airstrip to land at. \nMcKenzie Field is unsafe cuz too small runway (high risk of crash)"
 
 local spawn_plane = menu.add_feature("Spawn Plane","action",main_menu.id,function()
     local dest = airstrips[select_strip.value+1]
@@ -256,7 +257,7 @@ local spawn_plane = menu.add_feature("Spawn Plane","action",main_menu.id,functio
     local landstart_start = front_of_pos(landstart, v3(0,0,vector_to_heading(landstart,landend)), 250)
 
     ai.task_vehicle_drive_to_coord(plane_ped, plane_veh, take_off_pos, 300, 0, plane_hash, 0, 80,0)
-    menu.notify("Taking off!","Starting",nil,0x00AAFF)
+    menu.notify("Taking off now!","Taking off",nil,0x00AAFF)
 
     while true do
         system.yield(0)
@@ -270,7 +271,7 @@ local spawn_plane = menu.add_feature("Spawn Plane","action",main_menu.id,functio
 
     vehicle.control_landing_gear(plane_veh, 1)
 
-    menu.notify("Going to "..dest.name,"Flying",nil,0x00AAFF)
+    menu.notify("Flying toward "..dest.name,"Flying",nil,0x00AAFF)
 
     ai.task_vehicle_drive_to_coord(plane_ped, plane_veh, landstart_corrected+v3(0,0,200), 300, 0, plane_hash, 0, 200,0)
 
@@ -291,7 +292,7 @@ local spawn_plane = menu.add_feature("Spawn Plane","action",main_menu.id,functio
 
     ai.task_vehicle_drive_to_coord(plane_ped, plane_veh, landstart_start+v3(0,0,dest.land_alt_override or 100), dest.land_speed_override or 300, 0, plane_hash, 0, 200,0)
 
-    menu.notify("Preparing to Land at Dest!","Landing",nil,0x00AAFF)
+    menu.notify("Preparing to Land at Dest!","Landing Prep",nil,0x00AAFF)
 
 
     while true do
@@ -336,10 +337,12 @@ local spawn_plane = menu.add_feature("Spawn Plane","action",main_menu.id,functio
     menu.notify("Thanks you for using JJS Airline!","Thanks You!",nil,0x00AAFF)
     is_plane_active = false
 end)
+spawn_plane.hint = "Spawns your private jet , waiting for you to get inside!"
 
 local clean_plane = menu.add_feature("Clear All","action",main_menu.id,function()
     clear_all(nil,true,true)
 end)
+clean_plane.hint = "Clean up plane + pilot"
 
 if false then --ENABLES DEBUG FUNCTIONS
 
