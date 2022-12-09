@@ -45,6 +45,7 @@ if menu.get_trust_flags() ~= (1 << 2) then
 end
 
 local vehicle_hash = gameplay.get_hash_key("nightshark")
+local vehicle_name = "nightshark"
 local ped_hash = 988062523
 local vehicle_drive = 1076632110
 local vehicle_drive_close = 1076632111
@@ -57,47 +58,6 @@ local taxi_veh
 local is_taxi_active = false
 
 local last_drive = {}
-
-local function clear_all(delay,peds,vehicle)
-    if delay and type(delay) == "number" then
-        system.yield(delay)
-    end
-
-    for k,v in pairs(blips) do
-        repeat
-            ui.remove_blip(v)
-            system.yield(0)
-        until native.call(0xE41CA53051197A27, v):__tointeger() == 0
-        blips = {}
-    end
-
-    local attempts = 0
-
-    if peds and taxi_driver ~= nil then
-        repeat
-            network.request_control_of_entity(taxi_driver)
-            entity.delete_entity(taxi_driver)
-            system.yield(0)
-            attempts = attempts+1
-        until not entity.is_an_entity(taxi_driver) or attempts > 100
-    end
-
-    local attempts = 0
-
-    if vehicle and taxi_veh ~= nil then
-        repeat
-            network.request_control_of_entity(taxi_veh)
-            entity.delete_entity(taxi_veh)
-            attempts = attempts+1
-            system.yield(0)
-        until not entity.is_an_entity(taxi_veh) or attempts > 100
-        taxi_veh = 0
-    end
-
-    if vehicle and peds then
-        is_taxi_active = false
-    end
-end
 
 local function clear_all_noyield(delay)
     if delay and type(delay) == "number" then
@@ -144,7 +104,6 @@ local player_menu = menu.add_player_feature("JJS Taxi", "parent", 0)
 
 local taxi_vehicle = menu.add_feature("Taxi Vehicle = [nightshark]", "action", main_menu.id, function(ft)
     local status = 1
-    local vehicle_name
     while status == 1 do
         status, vehicle_name = input.get("Name/Hash Input","",15,2)
         system.yield(0)
@@ -184,19 +143,6 @@ local taxi_ped = menu.add_feature("Taxi Ped = [cs_fbisuit_01]", "action", main_m
 end)
 taxi_ped.hint = "Choose the ped model for the taxi driver"
 
-local taxi_speed = menu.add_feature("Speed = [23]", "action", main_menu.id, function(ft)
-    local status = 1
-    local temp_speed
-    while status == 1 do
-        status, temp_speed = input.get("Hash Input","",15,3)
-        system.yield(0)
-    end
-    vehicle_speed = tonumber(temp_speed)
-
-    ft.name = "Speed = ["..temp_speed.."]"
-end)
-taxi_speed.hint = "Choose the speed of the driver. Default is 23 (same as a taxi with quick mode)"
-
 
 local function resume_last_drive()
     if last_drive.type == "goto" then
@@ -207,6 +153,27 @@ local function resume_last_drive()
         ai.task_vehicle_follow(last_drive.driver, last_drive.veh, last_drive.dest, last_drive.speed, vehicle_drive, last_drive.dist)
     end
 end
+
+local taxi_speed = menu.add_feature("Speed = [23]", "action", main_menu.id, function(ft)
+    local status = 1
+    local temp_speed
+    while status == 1 do
+        status, temp_speed = input.get("Hash Input","",15,3)
+        system.yield(0)
+    end
+    vehicle_speed = tonumber(temp_speed)
+
+    ft.name = "Speed = ["..temp_speed.."]"
+    
+    if is_taxi_active then
+        menu.notify("Speed updated to "..vehicle_speed,"Updated Speed", nil, 0x00FF00)
+        last_drive["speed"] = vehicle_speed
+        resume_last_drive()
+    else
+        menu.notify("Speed not updated, No active taxi","Error", nil, 0x0000FF)
+    end
+end)
+taxi_speed.hint = "Choose the speed of the driver. Default is 23 (same as a taxi with quick mode)"
 
 local taxi_conv = menu.add_feature("Convertible Preference","autoaction_value_str",main_menu.id, function(ft)
     if is_taxi_active and entity.is_an_entity(taxi_veh) then
@@ -277,6 +244,51 @@ local taxi_allowfront = menu.add_feature("Allow Front Passenger", "toggle", main
 end)
 taxi_allowfront.hint = "Allows the player to enter front passenger seat in a 3+ seats vehicles (not needed for 2 seats vehicles)"
 
+local taxi_per_veh = menu.add_feature("Use personal vehicle", "toggle", main_menu.id, function(ft)
+end)
+taxi_per_veh.hint = "Use the player's personal vehicle instead of a new one"
+
+local function clear_all(delay,peds,vehicle)
+    if delay and type(delay) == "number" then
+        system.yield(delay)
+    end
+
+    for k,v in pairs(blips) do
+        repeat
+            ui.remove_blip(v)
+            system.yield(0)
+        until native.call(0xE41CA53051197A27, v):__tointeger() == 0
+        blips = {}
+    end
+
+    local attempts = 0
+
+    if peds and taxi_driver ~= nil then
+        repeat
+            network.request_control_of_entity(taxi_driver)
+            entity.delete_entity(taxi_driver)
+            system.yield(0)
+            attempts = attempts+1
+        until not entity.is_an_entity(taxi_driver) or attempts > 100
+    end
+
+    local attempts = 0
+
+    if vehicle and taxi_veh ~= nil and not taxi_per_veh.on then
+        repeat
+            network.request_control_of_entity(taxi_veh)
+            entity.delete_entity(taxi_veh)
+            attempts = attempts+1
+            system.yield(0)
+        until not entity.is_an_entity(taxi_veh) or attempts > 100
+        taxi_veh = 0
+    end
+
+    if vehicle and peds then
+        is_taxi_active = false
+    end
+end
+
 local taxi_spawn = menu.add_feature("Spawn Taxi", "action", main_menu.id, function(ft)
 
     if is_taxi_active then
@@ -308,6 +320,16 @@ local taxi_spawn = menu.add_feature("Spawn Taxi", "action", main_menu.id, functi
         system.yield(0)
     end
 
+    if taxi_per_veh.on then
+        vehicle_hash = entity.get_entity_model_hash(player.get_personal_vehicle())
+    else
+        vehicle_hash = gameplay.get_hash_key(vehicle_name)
+
+        if not streaming.is_model_a_vehicle(vehicle_hash) then
+            vehicle_hash = tonumber(vehicle_name)
+        end
+    end
+
     request_model(vehicle_hash)
 
     local seat_count = vehicle.get_vehicle_model_number_of_seats(vehicle_hash)
@@ -315,25 +337,33 @@ local taxi_spawn = menu.add_feature("Spawn Taxi", "action", main_menu.id, functi
     local s_point = table_random(points)
     local s_pos = v3(s_point.pos.x,s_point.pos.y,s_point.pos.z)
     --s_pos = player_pos + v3(5,0,0)
-    taxi_veh = vehicle.create_vehicle(vehicle_hash, s_pos + v3(0,0,2), vector_to_heading(player_pos, s_pos), true, false)
+
+    if not taxi_per_veh.on then
+        taxi_veh = vehicle.create_vehicle(vehicle_hash, s_pos + v3(0,0,2), vector_to_heading(player_pos, s_pos), true, false)
+    else
+        taxi_veh = player.get_personal_vehicle()
+    end
+
     system.yield(0)
     if ent_check(taxi_veh,true) then
         blips.taxi_veh = ui.add_blip_for_entity(taxi_veh)
         ui.set_blip_sprite(blips.taxi_veh, 198)
         ui.set_blip_colour(blips.taxi_veh, 2)
     end
+    
+    if not taxi_per_veh.on then
+        vehicle.set_vehicle_mod_kit_type(taxi_veh, 0)
 
-    vehicle.set_vehicle_mod_kit_type(taxi_veh, 0)
+        vehicle.set_vehicle_colors(taxi_veh, 12, 12)
+        vehicle.set_vehicle_extra_colors(taxi_veh, 64, 62)
+        vehicle.set_vehicle_window_tint(taxi_veh, 1)
 
-    vehicle.set_vehicle_colors(taxi_veh, 12, 12)
-    vehicle.set_vehicle_extra_colors(taxi_veh, 64, 62)
-    vehicle.set_vehicle_window_tint(taxi_veh, 1)
-
-    vehicle.set_vehicle_mod(taxi_veh, 11, 3)
-    vehicle.set_vehicle_mod(taxi_veh, 15, 3)
-    vehicle.set_vehicle_mod(taxi_veh, 16, 4)
-    vehicle.set_vehicle_mod(taxi_veh, 12, 2)
-    vehicle.set_vehicle_mod(taxi_veh, 18, 1)
+        vehicle.set_vehicle_mod(taxi_veh, 11, 3)
+        vehicle.set_vehicle_mod(taxi_veh, 15, 3)
+        vehicle.set_vehicle_mod(taxi_veh, 16, 4)
+        vehicle.set_vehicle_mod(taxi_veh, 12, 2)
+        vehicle.set_vehicle_mod(taxi_veh, 18, 1)
+    end
 
     if seat_count > 2 and not taxi_allowfront.on then
         native.call(0xBE70724027F85BCD, taxi_veh, 0, 3)
@@ -537,6 +567,16 @@ local taxi_spawn_pl = menu.add_player_feature("Spawn Taxi", "action", player_men
         system.yield(0)
     end
 
+    if taxi_per_veh.on then
+        vehicle_hash = entity.get_entity_model_hash(player.get_personal_vehicle())
+    else
+        vehicle_hash = gameplay.get_hash_key(vehicle_name)
+
+        if not streaming.is_model_a_vehicle(vehicle_hash) then
+            vehicle_hash = tonumber(vehicle_name)
+        end
+    end
+
     request_model(vehicle_hash)
 
     local seat_count = vehicle.get_vehicle_model_number_of_seats(vehicle_hash)
@@ -544,25 +584,33 @@ local taxi_spawn_pl = menu.add_player_feature("Spawn Taxi", "action", player_men
     local s_point = table_random(points)
     local s_pos = v3(s_point.pos.x,s_point.pos.y,s_point.pos.z)
     --s_pos = player_pos + v3(5,0,0)
-    taxi_veh = vehicle.create_vehicle(vehicle_hash, s_pos + v3(0,0,2), vector_to_heading(player_pos, s_pos), true, false)
+
+    if not taxi_per_veh.on then
+        taxi_veh = vehicle.create_vehicle(vehicle_hash, s_pos + v3(0,0,2), vector_to_heading(player_pos, s_pos), true, false)
+    else
+        taxi_veh = player.get_personal_vehicle()
+    end
+
     system.yield(0)
     if ent_check(taxi_veh,true) then
         blips.taxi_veh = ui.add_blip_for_entity(taxi_veh)
         ui.set_blip_sprite(blips.taxi_veh, 198)
         ui.set_blip_colour(blips.taxi_veh, 2)
     end
+    
+    if not taxi_per_veh.on then
+        vehicle.set_vehicle_mod_kit_type(taxi_veh, 0)
 
-    vehicle.set_vehicle_mod_kit_type(taxi_veh, 0)
+        vehicle.set_vehicle_colors(taxi_veh, 12, 12)
+        vehicle.set_vehicle_extra_colors(taxi_veh, 64, 62)
+        vehicle.set_vehicle_window_tint(taxi_veh, 1)
 
-    vehicle.set_vehicle_colors(taxi_veh, 12, 12)
-    vehicle.set_vehicle_extra_colors(taxi_veh, 64, 62)
-    vehicle.set_vehicle_window_tint(taxi_veh, 1)
-
-    vehicle.set_vehicle_mod(taxi_veh, 11, 3)
-    vehicle.set_vehicle_mod(taxi_veh, 15, 3)
-    vehicle.set_vehicle_mod(taxi_veh, 16, 4)
-    vehicle.set_vehicle_mod(taxi_veh, 12, 2)
-    vehicle.set_vehicle_mod(taxi_veh, 18, 1)
+        vehicle.set_vehicle_mod(taxi_veh, 11, 3)
+        vehicle.set_vehicle_mod(taxi_veh, 15, 3)
+        vehicle.set_vehicle_mod(taxi_veh, 16, 4)
+        vehicle.set_vehicle_mod(taxi_veh, 12, 2)
+        vehicle.set_vehicle_mod(taxi_veh, 18, 1)
+    end
 
     if seat_count > 2 then
         native.call(0xBE70724027F85BCD, taxi_veh, 0, 3)
