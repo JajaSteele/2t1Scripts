@@ -352,6 +352,7 @@ local taxi_spawn = menu.add_feature("Spawn Taxi", "action", main_menu.id, functi
     end
     
     if not taxi_per_veh.on then
+        native.call(0x1F4ED342ACEFE62D, taxi_veh, true, true)
         vehicle.set_vehicle_mod_kit_type(taxi_veh, 0)
 
         vehicle.set_vehicle_colors(taxi_veh, 12, 12)
@@ -388,6 +389,7 @@ local taxi_spawn = menu.add_feature("Spawn Taxi", "action", main_menu.id, functi
 
     request_model(ped_hash)
     taxi_driver = ped.create_ped(0, ped_hash, s_pos+v3(3,0,0), 0, true, false)
+    native.call(0x1F4ED342ACEFE62D, taxi_driver, true, true)
 
     system.yield(0)
     ped.set_ped_into_vehicle(taxi_driver, taxi_veh, -1)
@@ -520,7 +522,13 @@ local taxi_spawn = menu.add_feature("Spawn Taxi", "action", main_menu.id, functi
                 until vehicle.get_ped_in_vehicle_seat(taxi_veh, 0) == 0
             end
 
-            system.yield(5000)
+            system.yield(3000)
+
+            if not taxi_per_veh.on then
+                native.call(0xDE564951F95E09ED, taxi_veh, true, true)
+                native.call(0xDE564951F95E09ED, taxi_driver, true, true)
+                system.yield(2000)
+            end
 
             clear_all(nil,true,true)
             menu.notify("Thanks you for using JJS-Taxi!","Thanks You",nil,0xc203fc)
