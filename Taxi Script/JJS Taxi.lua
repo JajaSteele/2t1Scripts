@@ -7,6 +7,17 @@ local function request_model(_hash)
     end
 end
 
+local function request_control(_ent)
+    local attempts = 75
+    if not network.has_control_of_entity(_ent) then
+        network.request_control_of_entity(_ent)
+        while (not network.has_control_of_entity(_ent)) and (attempts > 0) do
+            system.yield(0)
+            attempts = attempts-1
+        end
+    end
+end
+
 local function ent_check(ent,dead)
     if dead then
         if ent ~= nil and type(ent) == "number" and entity.is_an_entity(ent) and not entity.is_entity_dead(ent) then
@@ -264,8 +275,8 @@ local function clear_all(delay,peds,vehicle)
     local attempts = 0
 
     if peds and taxi_driver ~= nil then
+        request_control(taxi_driver)
         repeat
-            network.request_control_of_entity(taxi_driver)
             entity.delete_entity(taxi_driver)
             system.yield(0)
             attempts = attempts+1
@@ -275,8 +286,8 @@ local function clear_all(delay,peds,vehicle)
     local attempts = 0
 
     if vehicle and taxi_veh ~= nil and not taxi_per_veh.on then
+        request_control(taxi_veh)
         repeat
-            network.request_control_of_entity(taxi_veh)
             entity.delete_entity(taxi_veh)
             attempts = attempts+1
             system.yield(0)
@@ -423,8 +434,8 @@ local taxi_spawn = menu.add_feature("Spawn Taxi", "action", main_menu.id, functi
     ui.set_blip_route(blips.destv3_safe, true)
     ui.set_blip_route_color(blips.destv3_safe, 46)
 
-    network.request_control_of_entity(taxi_driver)
-    network.request_control_of_entity(taxi_veh)
+    request_control(taxi_driver)
+    request_control(taxi_veh)
 
     request_model(vehicle_hash)
     ai.task_vehicle_drive_to_coord(taxi_driver, taxi_veh, destv3_safe, 5, 0, vehicle_hash, vehicle_drive, 50, 10)
@@ -528,7 +539,7 @@ local taxi_spawn = menu.add_feature("Spawn Taxi", "action", main_menu.id, functi
                 native.call(0xDE564951F95E09ED, taxi_veh, true, true)
                 native.call(0xDE564951F95E09ED, taxi_driver, true, true)
                 system.yield(2000)
-            end
+            end 
 
             clear_all(nil,true,true)
             menu.notify("Thanks you for using JJS-Taxi!","Thanks You",nil,0xc203fc)
@@ -667,8 +678,8 @@ local taxi_spawn_pl = menu.add_player_feature("Spawn Taxi", "action", player_men
 
     
 
-    network.request_control_of_entity(taxi_driver)
-    network.request_control_of_entity(taxi_veh)
+    request_control(taxi_driver)
+    request_control(taxi_veh)
     ai.task_vehicle_follow(taxi_driver, taxi_veh, tar_player_ped, 5, vehicle_drive, 25)
     system.yield(250)
     ai.task_vehicle_follow(taxi_driver, taxi_veh, tar_player_ped, 5, vehicle_drive, 25)

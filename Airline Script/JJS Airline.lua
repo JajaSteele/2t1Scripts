@@ -11,6 +11,17 @@ local function request_model(_hash)
     end
 end
 
+local function request_control(_ent)
+    local attempts = 75
+    if not network.has_control_of_entity(_ent) then
+        network.request_control_of_entity(_ent)
+        while (not network.has_control_of_entity(_ent)) and (attempts > 0) do
+            system.yield(0)
+            attempts = attempts-1
+        end
+    end
+end
+
 function front_of_pos(_pos,_rot,_dist)
     _rot:transformRotToDir()
     _rot = _rot * _dist
@@ -97,8 +108,8 @@ local function clear_all(delay,peds,vehicle)
     local attempts = 0
 
     if peds and plane_ped ~= nil then
+        request_control(plane_ped)
         repeat
-            network.request_control_of_entity(plane_ped)
             entity.delete_entity(plane_ped)
             system.yield(0)
             attempts = attempts+1
@@ -107,20 +118,9 @@ local function clear_all(delay,peds,vehicle)
 
     local attempts = 0
 
-    if peds and plane_ped2 ~= nil then
-        repeat
-            network.request_control_of_entity(plane_ped2)
-            entity.delete_entity(plane_ped2)
-            system.yield(0)
-            attempts = attempts+1
-        until not entity.is_an_entity(plane_ped2) or attempts > 300
-    end
-
-    local attempts = 0
-
     if vehicle and plane_veh ~= nil then
+        request_control(plane_veh)
         repeat
-            network.request_control_of_entity(plane_veh)
             entity.delete_entity(plane_veh)
             attempts = attempts+1
             system.yield(0)
@@ -217,9 +217,10 @@ local trans_vehicle = menu.add_feature("Transport Vehicle = [sanchez2]","action"
 end)
 trans_vehicle.hint = "Set the model for the Transport Vehicle (See below for explanation)"
 
-local trans_vehicle_toggle = menu.add_feature("Transport Vehicle","toggle",main_menu.id,function()
+local trans_vehicle_toggle = menu.add_feature("Transport Vehicle","autoaction_value_str",main_menu.id,function()
 end)
 trans_vehicle_toggle.hint = "The Transport Vehicle spawns at your destination, right after the plane itself despawns. \nUseful to get out of airport more easily!"
+trans_vehicle_toggle:set_str_data({"None","Spawn","Personal"})
 
 local plane_select = menu.add_feature("Plane Model = [luxor2]","action",main_menu.id,function(ft)
     local status = 1
@@ -258,7 +259,6 @@ local spawn_plane = menu.add_feature("Spawn Plane","action",main_menu.id,functio
 
     system.yield(0)
 
-
     vehicle.set_vehicle_on_ground_properly(plane_veh)
 
     request_model(ped_hash)
@@ -275,7 +275,7 @@ local spawn_plane = menu.add_feature("Spawn Plane","action",main_menu.id,functio
     vehicle.set_vehicle_window_tint(plane_veh, 1)
 
     native.call(0xBE70724027F85BCD, plane_veh, 0, 3)
-    native.call(0xBE70724027F85BCD, plane_veh, 1, 3)
+    native.call(0xBE70724027F85BCD, plane_veh, 1, 0)
 
     native.call(0x2311DD7159F00582, plane_veh, true)
     native.call(0xDBC631F109350B8C, plane_veh, true)
@@ -309,6 +309,7 @@ local spawn_plane = menu.add_feature("Spawn Plane","action",main_menu.id,functio
     local landstart_start = front_of_pos(landstart, v3(0,0,vector_to_heading(landstart,landend)), 250)
 
     ai.task_vehicle_drive_to_coord(plane_ped, plane_veh, take_off_pos, 300, 0, plane_hash, 0, 80,0)
+
     menu.notify("Taking off now!","Taking off",nil,0x00AAFF)
 
     while true do
@@ -319,13 +320,13 @@ local spawn_plane = menu.add_feature("Spawn Plane","action",main_menu.id,functio
         end
     end
 
+    ai.task_vehicle_drive_to_coord(plane_ped, plane_veh, landstart_corrected+v3(0,0,200), 300, 0, plane_hash, 0, 200,0)
 
-
+    request_control(plane_veh)
     vehicle.control_landing_gear(plane_veh, 1)
-
     menu.notify("Flying toward "..dest.name,"Flying",nil,0x00AAFF)
 
-    ai.task_vehicle_drive_to_coord(plane_ped, plane_veh, landstart_corrected+v3(0,0,200), 300, 0, plane_hash, 0, 200,0)
+    
 
     while true do
         local plane_pos_live = entity.get_entity_coords(plane_veh)
@@ -364,7 +365,7 @@ local spawn_plane = menu.add_feature("Spawn Plane","action",main_menu.id,functio
 
     menu.notify("Landing at Dest!","Landing",nil,0x00AAFF)
 
-    
+    request_control(plane_veh)
     native.call(0xBF19721FA34D32C0, plane_ped, plane_veh, landstart, landend)
 
     while true do
@@ -394,7 +395,7 @@ local spawn_plane = menu.add_feature("Spawn Plane","action",main_menu.id,functio
 
     system.yield(2000)
 
-    if trans_vehicle_toggle.on then
+    if trans_vehicle_toggle.value == 1 then
         system.yield(500)
 
         request_model(trans_veh_hash)
@@ -417,6 +418,25 @@ local spawn_plane = menu.add_feature("Spawn Plane","action",main_menu.id,functio
         vehicle.set_vehicle_mod(trans_veh_veh, 16, 4)
         vehicle.set_vehicle_mod(trans_veh_veh, 12, 2)
         vehicle.set_vehicle_mod(trans_veh_veh, 18, 1)
+    elseif trans_vehicle_toggle.value == 2 and player.get_personal_vehicle() ~= 0 then
+        if not entity.is_an_entity(player.get_personal_vehicle()) then
+            menu.get_feature_by_hierarchy_key("online.services.personal_vehicles.request_current_vehicle"):toggle()
+            repeat
+                system.yield(20)
+            until entity.is_an_entity(player.get_personal_vehicle())
+        end
+        system.yield(500)
+
+        local trans_veh_veh = player.get_personal_vehicle()
+        request_control(trans_veh_veh)
+        entity.set_entity_coords_no_offset(trans_veh_veh, last_plane_coord)
+        entity.set_entity_rotation(trans_veh_veh, v3(0, 0, last_plane_heading))
+
+        native.call(0x1F4ED342ACEFE62D, trans_veh_veh, true, true)
+        system.yield(0)
+        vehicle.set_vehicle_on_ground_properly(trans_veh_veh)
+
+        menu.notify("Your Personal Transport Vehicle has been delivered!","Delivered",nil,0x00FF00)
     end
 
     clear_all(nil,true,true)
