@@ -222,6 +222,18 @@ end)
 trans_vehicle_toggle.hint = "The Transport Vehicle spawns at your destination, right after the plane itself despawns. \nUseful to get out of airport more easily!"
 trans_vehicle_toggle:set_str_data({"None","Spawn","Personal"})
 
+local plane_allowfront = menu.add_feature("Allow Front Passenger", "toggle", main_menu.id, function(ft)
+    if is_plane_active then
+        if ft.on then
+            native.call(0xBE70724027F85BCD, plane_veh or 0, 1, 0)
+        else
+            native.call(0xBE70724027F85BCD, plane_veh or 0, 1, 3)
+        end
+    end
+end)
+plane_allowfront.hint = "Allows the player to enter front passenger seat"
+plane_allowfront.on = true
+
 local plane_select = menu.add_feature("Plane Model = [luxor2]","action",main_menu.id,function(ft)
     local status = 1
     while status == 1 do
@@ -275,7 +287,11 @@ local spawn_plane = menu.add_feature("Spawn Plane","action",main_menu.id,functio
     vehicle.set_vehicle_window_tint(plane_veh, 1)
 
     native.call(0xBE70724027F85BCD, plane_veh, 0, 3)
-    native.call(0xBE70724027F85BCD, plane_veh, 1, 0)
+    if plane_allowfront.on then
+        native.call(0xBE70724027F85BCD, plane_veh, 1, 0)
+    else
+        native.call(0xBE70724027F85BCD, plane_veh, 1, 3)
+    end
 
     native.call(0x2311DD7159F00582, plane_veh, true)
     native.call(0xDBC631F109350B8C, plane_veh, true)
@@ -393,50 +409,53 @@ local spawn_plane = menu.add_feature("Spawn Plane","action",main_menu.id,functio
     
     menu.notify("Thanks you for using JJS Airline!","Thanks You!",nil,0x00AAFF)
 
-    system.yield(2000)
+    system.yield(2000) 
 
-    if trans_vehicle_toggle.value == 1 or (trans_vehicle_toggle.value == 2 and player.get_personal_vehicle() == 0 then
-        system.yield(500)
+    if is_plane_active then
+        if trans_vehicle_toggle.value == 1 or (trans_vehicle_toggle.value == 2 and player.get_personal_vehicle() == 0) then
+            system.yield(500)
 
-        request_model(trans_veh_hash)
-        local trans_veh_veh = vehicle.create_vehicle(trans_veh_hash, last_plane_coord, last_plane_heading, true, false)
-        native.call(0x1F4ED342ACEFE62D, trans_veh_veh, true, true)
-        system.yield(0)
-        vehicle.set_vehicle_on_ground_properly(trans_veh_veh)
-        streaming.set_model_as_no_longer_needed(trans_veh_hash)
+            request_model(trans_veh_hash)
+            local trans_veh_veh = vehicle.create_vehicle(trans_veh_hash, last_plane_coord, last_plane_heading, true, false)
+            native.call(0x1F4ED342ACEFE62D, trans_veh_veh, true, true)
+            system.yield(0)
+            vehicle.set_vehicle_on_ground_properly(trans_veh_veh)
+            streaming.set_model_as_no_longer_needed(trans_veh_hash)
 
-        menu.notify("Your Transport Vehicle has been delivered!","Delivered",nil,0x00FF00)
+            menu.notify("Your Transport Vehicle has been delivered!","Delivered",nil,0x00FF00)
 
-        vehicle.set_vehicle_mod_kit_type(trans_veh_veh, 0)
+            vehicle.set_vehicle_mod_kit_type(trans_veh_veh, 0)
 
-        vehicle.set_vehicle_colors(trans_veh_veh, 12, 12)
-        vehicle.set_vehicle_extra_colors(trans_veh_veh, 64, 62)
-        vehicle.set_vehicle_window_tint(trans_veh_veh, 1)
+            vehicle.set_vehicle_colors(trans_veh_veh, 12, 12)
+            vehicle.set_vehicle_extra_colors(trans_veh_veh, 64, 62)
+            vehicle.set_vehicle_window_tint(trans_veh_veh, 1)
 
-        vehicle.set_vehicle_mod(trans_veh_veh, 11, 3)
-        vehicle.set_vehicle_mod(trans_veh_veh, 15, 3)
-        vehicle.set_vehicle_mod(trans_veh_veh, 16, 4)
-        vehicle.set_vehicle_mod(trans_veh_veh, 12, 2)
-        vehicle.set_vehicle_mod(trans_veh_veh, 18, 1)
-    elseif trans_vehicle_toggle.value == 2 and player.get_personal_vehicle() ~= 0 then
-        if not entity.is_an_entity(player.get_personal_vehicle()) then
+            vehicle.set_vehicle_mod(trans_veh_veh, 11, 3)
+            vehicle.set_vehicle_mod(trans_veh_veh, 15, 3)
+            vehicle.set_vehicle_mod(trans_veh_veh, 16, 4)
+            vehicle.set_vehicle_mod(trans_veh_veh, 12, 2)
+            vehicle.set_vehicle_mod(trans_veh_veh, 18, 1)
+        elseif trans_vehicle_toggle.value == 2 and player.get_personal_vehicle() ~= 0 then
+            menu.get_feature_by_hierarchy_key("online.services.personal_vehicles.claim_all_destroyed_vehicles"):toggle()
+            system.yield(500)
             menu.get_feature_by_hierarchy_key("online.services.personal_vehicles.request_current_vehicle"):toggle()
             repeat
                 system.yield(20)
             until entity.is_an_entity(player.get_personal_vehicle())
+
+            system.yield(1000)
+
+            local trans_veh_veh = player.get_personal_vehicle()
+            request_control(trans_veh_veh)
+            entity.set_entity_coords_no_offset(trans_veh_veh, last_plane_coord)
+            entity.set_entity_rotation(trans_veh_veh, v3(0, 0, last_plane_heading))
+
+            native.call(0x1F4ED342ACEFE62D, trans_veh_veh, true, true)
+            system.yield(0)
+            vehicle.set_vehicle_on_ground_properly(trans_veh_veh)
+
+            menu.notify("Your Personal Transport Vehicle has been delivered!","Delivered",nil,0x00FF00)
         end
-        system.yield(500)
-
-        local trans_veh_veh = player.get_personal_vehicle()
-        request_control(trans_veh_veh)
-        entity.set_entity_coords_no_offset(trans_veh_veh, last_plane_coord)
-        entity.set_entity_rotation(trans_veh_veh, v3(0, 0, last_plane_heading))
-
-        native.call(0x1F4ED342ACEFE62D, trans_veh_veh, true, true)
-        system.yield(0)
-        vehicle.set_vehicle_on_ground_properly(trans_veh_veh)
-
-        menu.notify("Your Personal Transport Vehicle has been delivered!","Delivered",nil,0x00FF00)
     end
 
     clear_all(nil,true,true)
