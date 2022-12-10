@@ -45,6 +45,12 @@ local is_plane_active = false
 local trans_veh_name = "sanchez2"
 local trans_veh_hash = gameplay.get_hash_key(trans_veh_name)
 
+local function notify(text,title,dur,color)
+    if is_plane_active then
+        menu.notify(text,title,dur,color)
+    end
+end
+
 local function get_free_seats(veh)
     local veh_hash = entity.get_entity_model_hash(veh)
     local seat_count = vehicle.get_vehicle_model_number_of_seats(veh_hash)
@@ -92,7 +98,7 @@ local function clear_all_noyield(delay)
     plane_veh = 0
 end
 
-local function clear_all(delay,peds,vehicle)
+local function clear_all(delay,peds,vehicle,reset)
     if delay and type(delay) == "number" then
         system.yield(delay)
     end
@@ -128,7 +134,7 @@ local function clear_all(delay,peds,vehicle)
         plane_veh = 0
     end
 
-    if vehicle and peds then
+    if vehicle and peds and (reset or true) then
         is_plane_active = false
     end
 end
@@ -195,7 +201,7 @@ local main_menu = menu.add_feature("JJS Airline", "parent", 0)
 local select_strip = menu.add_feature("Destination","autoaction_value_str",main_menu.id,function()
 end)
 select_strip:set_str_data(select_data)
-select_strip.hint = "Select the airstrip to land at. \nMcKenzie Field is unsafe cuz too small runway (high risk of crash)"
+select_strip.hint = "Select the airstrip to land at. \nMcKenzie Field is unsafe cuz too small runway (high risk of crash)\n\nI found out the vehicle 'seabreeze' easily lands at McKenzie!"
 
 local trans_vehicle = menu.add_feature("Transport Vehicle = [sanchez2]","action",main_menu.id,function(ft)
     local status = 1
@@ -226,8 +232,10 @@ local plane_allowfront = menu.add_feature("Allow Front Passenger", "toggle", mai
     if is_plane_active then
         if ft.on then
             native.call(0xBE70724027F85BCD, plane_veh or 0, 1, 0)
+            native.call(0xBE70724027F85BCD, plane_veh or 0, 0, 0)
         else
             native.call(0xBE70724027F85BCD, plane_veh or 0, 1, 3)
+            native.call(0xBE70724027F85BCD, plane_veh or 0, 0, 3)
         end
     end
 end)
@@ -256,6 +264,7 @@ plane_select.hint = "Set the model for your plane.\nMight not work well with eve
 
 local spawn_plane = menu.add_feature("Spawn Plane","action",main_menu.id,function()
     local dest = airstrips[select_strip.value+1]
+    
     is_plane_active = true
     local local_player = player.player_id()
     local player_pos = player.get_player_coords(local_player)
@@ -273,6 +282,16 @@ local spawn_plane = menu.add_feature("Spawn Plane","action",main_menu.id,functio
 
     vehicle.set_vehicle_on_ground_properly(plane_veh)
 
+    if entity.is_an_entity(plane_veh) then
+        blips.private_jet = ui.add_blip_for_entity(plane_veh)
+        ui.set_blip_sprite(blips.private_jet, 307)
+        ui.set_blip_colour(blips.private_jet, 2)
+
+        native.call(0xF9113A30DE5C6670, "STRING")
+        native.call(0x6C188BE134E074AA, "Your Private Plane")
+        native.call(0xBC38B49BCB83BC9B, blips.private_jet)
+    end
+
     request_model(ped_hash)
     plane_ped = ped.create_ped(0, ped_hash, spawn_pos + v3(0,0,2), player_heading, true, false)
     streaming.set_model_as_no_longer_needed(ped_hash)
@@ -286,10 +305,12 @@ local spawn_plane = menu.add_feature("Spawn Plane","action",main_menu.id,functio
     vehicle.set_vehicle_extra_colors(plane_veh, 36, 0)
     vehicle.set_vehicle_window_tint(plane_veh, 1)
 
-    native.call(0xBE70724027F85BCD, plane_veh, 0, 3)
+    
     if plane_allowfront.on then
+        native.call(0xBE70724027F85BCD, plane_veh, 0, 0)
         native.call(0xBE70724027F85BCD, plane_veh, 1, 0)
     else
+        native.call(0xBE70724027F85BCD, plane_veh, 0, 3)
         native.call(0xBE70724027F85BCD, plane_veh, 1, 3)
     end
 
@@ -324,9 +345,17 @@ local spawn_plane = menu.add_feature("Spawn Plane","action",main_menu.id,functio
     local landstart_corrected = front_of_pos(landstart, v3(0,0,vector_to_heading(landstart,landend)), 2500)
     local landstart_start = front_of_pos(landstart, v3(0,0,vector_to_heading(landstart,landend)), 250)
 
+    blips.dest_travel = ui.add_blip_for_coord(landstart_corrected)
+    ui.set_blip_sprite(blips.dest_travel, 58)
+    ui.set_blip_colour(blips.dest_travel, 5)
+
+    native.call(0xF9113A30DE5C6670, "STRING")
+    native.call(0x6C188BE134E074AA, "Destination")
+    native.call(0xBC38B49BCB83BC9B, blips.dest_travel)
+
     ai.task_vehicle_drive_to_coord(plane_ped, plane_veh, take_off_pos, 300, 0, plane_hash, 0, 80,0)
 
-    menu.notify("Taking off now!","Taking off",nil,0x00AAFF)
+    notify("Taking off now!","Taking off",nil,0x00AAFF)
 
     while true do
         system.yield(0)
@@ -340,7 +369,7 @@ local spawn_plane = menu.add_feature("Spawn Plane","action",main_menu.id,functio
 
     request_control(plane_veh)
     vehicle.control_landing_gear(plane_veh, 1)
-    menu.notify("Flying toward "..dest.name,"Flying",nil,0x00AAFF)
+    notify("Flying toward "..dest.name,"Flying",nil,0x00AAFF)
 
     
 
@@ -360,8 +389,33 @@ local spawn_plane = menu.add_feature("Spawn Plane","action",main_menu.id,functio
     end
 
     ai.task_vehicle_drive_to_coord(plane_ped, plane_veh, landstart_start+v3(0,0,dest.land_alt_override or 75), dest.land_speed_override or 300, 0, plane_hash, 0, 200,0)
+    notify("Preparing to Land at Dest!","Landing Prep",nil,0x00AAFF)
 
-    menu.notify("Preparing to Land at Dest!","Landing Prep",nil,0x00AAFF)
+    if blips.dest_travel then
+        ui.remove_blip(blips.dest_travel)
+        blips.dest_travel = nil
+    end
+
+    blips.dest_start = ui.add_blip_for_coord(v3(dest.start1.x, dest.start1.y, dest.start1.z))
+    ui.set_blip_sprite(blips.dest_start, 6)
+    ui.set_blip_colour(blips.dest_start, 2)
+    native.call(0xA8B6AFDAC320AC87, blips.dest_start, vector_to_heading(landend,landstart))
+    
+
+    blips.dest_end = ui.add_blip_for_coord(v3(dest.end1.x, dest.end1.y, dest.end1.z))
+    ui.set_blip_sprite(blips.dest_end, 6)
+    ui.set_blip_colour(blips.dest_end, 1)
+    native.call(0xA8B6AFDAC320AC87, blips.dest_end, vector_to_heading(landend,landstart))
+
+
+    native.call(0xF9113A30DE5C6670, "STRING")
+    native.call(0x6C188BE134E074AA, "Runway Start")
+    native.call(0xBC38B49BCB83BC9B, blips.dest_start)
+
+    native.call(0xF9113A30DE5C6670, "STRING")
+    native.call(0x6C188BE134E074AA, "Runway End")
+    native.call(0xBC38B49BCB83BC9B, blips.dest_end)
+    
 
 
     while true do
@@ -379,7 +433,7 @@ local spawn_plane = menu.add_feature("Spawn Plane","action",main_menu.id,functio
         system.yield(0)
     end
 
-    menu.notify("Landing at Dest!","Landing",nil,0x00AAFF)
+    notify("Landing at Dest!","Landing",nil,0x00AAFF)
 
     request_control(plane_veh)
     native.call(0xBF19721FA34D32C0, plane_ped, plane_veh, landstart, landend)
@@ -392,7 +446,7 @@ local spawn_plane = menu.add_feature("Spawn Plane","action",main_menu.id,functio
         system.yield(0)
     end
 
-    menu.notify("Welcome to "..dest.name.."! Please exit the jet shortly.","Welcome",nil,0x00FF00)
+    notify("Welcome to "..dest.name.."! Please exit the jet shortly.","Welcome",nil,0x00FF00)
 
     repeat
         system.yield(0)
@@ -407,7 +461,7 @@ local spawn_plane = menu.add_feature("Spawn Plane","action",main_menu.id,functio
     native.call(0xDE564951F95E09ED, plane_veh, true, true)
     native.call(0xDE564951F95E09ED, plane_ped, true, true)
     
-    menu.notify("Thanks you for using JJS Airline!","Thanks You!",nil,0x00AAFF)
+    notify("Thanks you for using JJS Airline!","Thanks You!",nil,0x00AAFF)
 
     system.yield(2000) 
 
@@ -436,12 +490,15 @@ local spawn_plane = menu.add_feature("Spawn Plane","action",main_menu.id,functio
             vehicle.set_vehicle_mod(trans_veh_veh, 12, 2)
             vehicle.set_vehicle_mod(trans_veh_veh, 18, 1)
         elseif trans_vehicle_toggle.value == 2 and player.get_personal_vehicle() ~= 0 then
-            menu.get_feature_by_hierarchy_key("online.services.personal_vehicles.claim_all_destroyed_vehicles"):toggle()
-            system.yield(500)
-            menu.get_feature_by_hierarchy_key("online.services.personal_vehicles.request_current_vehicle"):toggle()
-            repeat
-                system.yield(20)
-            until entity.is_an_entity(player.get_personal_vehicle())
+            if not entity.is_an_entity(player.get_personal_vehicle()) or (entity.is_entity_dead(player.get_personal_vehicle())) then
+                menu.get_feature_by_hierarchy_key("online.services.personal_vehicles.claim_all_destroyed_vehicles"):toggle()
+                system.yield(500)
+                menu.get_feature_by_hierarchy_key("online.services.personal_vehicles.request_current_vehicle"):toggle()
+                repeat
+                    system.yield(20)
+                until entity.is_an_entity(player.get_personal_vehicle())
+                system.yield(3000)
+            end
 
             system.yield(1000)
 
@@ -470,7 +527,7 @@ end)
 plane_status.hint = "The current status of the plane script"
 
 local clean_plane = menu.add_feature("Clear All","action",main_menu.id,function()
-    clear_all(nil,true,true)
+    clear_all(nil,true,true,false)
 end)
 clean_plane.hint = "Clean up plane + pilot"
 
@@ -482,6 +539,16 @@ local status_thread = menu.create_thread(function()
             plane_status.name = ("Status: Inactive")
         end
         system.yield(500)
+    end
+end)
+
+local plane_blip_rot = menu.create_thread(function()
+    while true do
+        if is_plane_active and native.call(0xA6DB27D19ECBB7DA, blips.private_jet or 0):__tointeger() == 1 and entity.is_an_entity(plane_veh or 0) then
+            local curr_heading = entity.get_entity_heading(plane_veh)
+            native.call(0xA8B6AFDAC320AC87, blips.private_jet, curr_heading)
+        end
+        system.yield(0)
     end
 end)
 
