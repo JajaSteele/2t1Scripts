@@ -395,7 +395,7 @@ local spawn_plane = menu.add_feature("Spawn Plane","action",main_menu.id,functio
 
     system.yield(2000)
 
-    if trans_vehicle_toggle.value == 1 then
+    if trans_vehicle_toggle.value == 1 or (trans_vehicle_toggle.value == 2 and player.get_personal_vehicle() == 0 then
         system.yield(500)
 
         request_model(trans_veh_hash)
