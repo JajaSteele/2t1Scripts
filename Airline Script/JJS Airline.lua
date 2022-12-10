@@ -102,7 +102,7 @@ local function clear_all(delay,peds,vehicle)
             entity.delete_entity(plane_ped)
             system.yield(0)
             attempts = attempts+1
-        until not entity.is_an_entity(plane_ped) or attempts > 100
+        until not entity.is_an_entity(plane_ped) or attempts > 300
     end
 
     local attempts = 0
@@ -113,7 +113,7 @@ local function clear_all(delay,peds,vehicle)
             entity.delete_entity(plane_ped2)
             system.yield(0)
             attempts = attempts+1
-        until not entity.is_an_entity(plane_ped2) or attempts > 100
+        until not entity.is_an_entity(plane_ped2) or attempts > 300
     end
 
     local attempts = 0
@@ -124,7 +124,7 @@ local function clear_all(delay,peds,vehicle)
             entity.delete_entity(plane_veh)
             attempts = attempts+1
             system.yield(0)
-        until not entity.is_an_entity(plane_veh) or attempts > 100
+        until not entity.is_an_entity(plane_veh) or attempts > 300
         plane_veh = 0
     end
 
@@ -254,14 +254,18 @@ local spawn_plane = menu.add_feature("Spawn Plane","action",main_menu.id,functio
     request_model(plane_hash)
     plane_veh = vehicle.create_vehicle(plane_hash, spawn_pos, player_heading, true, false)
     streaming.set_model_as_no_longer_needed(plane_hash)
+    native.call(0x1F4ED342ACEFE62D, plane_veh, true, true)
 
     system.yield(0)
+
 
     vehicle.set_vehicle_on_ground_properly(plane_veh)
 
     request_model(ped_hash)
     plane_ped = ped.create_ped(0, ped_hash, spawn_pos + v3(0,0,2), player_heading, true, false)
     streaming.set_model_as_no_longer_needed(ped_hash)
+
+    native.call(0x1F4ED342ACEFE62D, plane_ped, true, true)
 
     system.yield(50)
 
@@ -378,20 +382,24 @@ local spawn_plane = menu.add_feature("Spawn Plane","action",main_menu.id,functio
         local taken_seats = get_taken_seats(plane_veh)
     until taken_seats <= 1
 
-    system.yield(5000)
+    system.yield(3000)
 
     local last_plane_coord = entity.get_entity_coords(plane_veh)
     local last_plane_heading = entity.get_entity_heading(plane_veh)
 
-    clear_all(nil, true, true)
+    native.call(0xDE564951F95E09ED, plane_veh, true, true)
+    native.call(0xDE564951F95E09ED, plane_ped, true, true)
     
     menu.notify("Thanks you for using JJS Airline!","Thanks You!",nil,0x00AAFF)
 
+    system.yield(2000)
+
     if trans_vehicle_toggle.on then
-        system.yield(1000)
+        system.yield(500)
 
         request_model(trans_veh_hash)
         local trans_veh_veh = vehicle.create_vehicle(trans_veh_hash, last_plane_coord, last_plane_heading, true, false)
+        native.call(0x1F4ED342ACEFE62D, trans_veh_veh, true, true)
         system.yield(0)
         vehicle.set_vehicle_on_ground_properly(trans_veh_veh)
         streaming.set_model_as_no_longer_needed(trans_veh_hash)
@@ -410,14 +418,33 @@ local spawn_plane = menu.add_feature("Spawn Plane","action",main_menu.id,functio
         vehicle.set_vehicle_mod(trans_veh_veh, 12, 2)
         vehicle.set_vehicle_mod(trans_veh_veh, 18, 1)
     end
+
+    clear_all(nil,true,true)
+
     is_plane_active = false
 end)
 spawn_plane.hint = "Spawns your private jet , waiting for you to get inside!"
+
+local plane_status = menu.add_feature("Status: ", "action", main_menu.id, function()
+    menu.notify("idk what you expected to happen, but hello","fard",nil,0x00FF00)
+end)
+plane_status.hint = "The current status of the plane script"
 
 local clean_plane = menu.add_feature("Clear All","action",main_menu.id,function()
     clear_all(nil,true,true)
 end)
 clean_plane.hint = "Clean up plane + pilot"
+
+local status_thread = menu.create_thread(function()
+    while true do
+        if is_plane_active then
+            plane_status.name = ("Status: Active")
+        else
+            plane_status.name = ("Status: Inactive")
+        end
+        system.yield(500)
+    end
+end)
 
 if false then --ENABLES DEBUG FUNCTIONS
 
@@ -437,6 +464,10 @@ if false then --ENABLES DEBUG FUNCTIONS
 
     local random_test = menu.add_feature("Get seats", "action", main_menu.id, function()
         menu.notify(tostring(vehicle.get_free_seat(plane_veh),"Test",nil,0x00FFFF))
+    end)
+
+    local fade_out = menu.add_feature("Fade out plane","action",main_menu.id,function()
+        native.call(0xDE564951F95E09ED, plane_veh, true, true)
     end)
 end
 
