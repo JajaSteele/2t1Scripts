@@ -1,7 +1,6 @@
 if menu.get_trust_flags() ~= (1 << 2) then
-    menu.notify("Avenger Utils requires \"Natives\" Trust flag", "Trust Error", nil, 0x0000FF)
+    menu.notify("JJS Pets requires \"Natives\" Trust flag", "Trust Error", nil, 0x0000FF)
 end
-
 
 local pets_ents = {}
 local blips = {}
