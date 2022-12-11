@@ -215,10 +215,12 @@ local autopilot_avenger = menu.add_feature("Move Avenger to WP","action",main_me
                     system.yield(0)
                 until ((curr_heading > forward_heading-5) and (curr_heading < forward_heading+5) and curr_height > (avenger_pos.z+100) ) or (not autopilot_active)
                 
+                native.call(0xCE2B43770B655F8F, avenger, false)
                 for i1=1, 60 do
                     native.call(0x9AA47FFF660CB932, avenger, (60-i1)/60)
                     system.yield(0)
                 end
+                native.call(0xCE2B43770B655F8F, avenger, true)
 
                 request_control(avenger)
                 ai.task_vehicle_drive_to_coord(avenger_pilot, avenger, dest_v3+v3(0,0,150), 300, 0, avenger_hash, 2, 25, 0)
@@ -233,17 +235,15 @@ local autopilot_avenger = menu.add_feature("Move Avenger to WP","action",main_me
 
                     local hori_dist = dist_x+dist_y
 
-                    if hori_dist < 350 then
+                    if hori_dist < 750 then
                         request_control(avenger)
                         print("Preparing to Land")
                         menu.notify("Avenger preparing to land","Preparing",nil,0x00FF00)
                         native.call(0xCE2B43770B655F8F, avenger, false)
-                        system.yield(50)
-                        native.call(0x30D779DE7C4F6DD3, avenger, 1)
-                        system.yield(50)
-                        repeat
+                        for i1=1, 60 do
+                            native.call(0x9AA47FFF660CB932, avenger, i1/60)
                             system.yield(0)
-                        until native.call(0xDA62027C8BDB326E, avenger):__tonumber() == 1
+                        end
                         native.call(0xCE2B43770B655F8F, avenger, true)
                         break
                     end
@@ -287,8 +287,6 @@ local autopilot_avenger = menu.add_feature("Move Avenger to WP","action",main_me
             repeat
                 system.yield(0)
                 local height = native.call(0x1DD55701034110E5, avenger):__tonumber()
-                ui.set_text_right_justify(true)
-                ui.draw_text(string.format("Height: %2.f",height), v2(0.1,0.1))
             until height < 2.8 or not autopilot_active
 
             menu.notify("Avenger has Landed!","Landed Successfully",nil,0x00FF00)
