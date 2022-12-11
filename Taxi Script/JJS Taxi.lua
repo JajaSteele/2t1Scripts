@@ -46,7 +46,6 @@ function vector_to_heading(_target,_start)
 end
 
 local ground_check = {900}
-
 repeat
     ground_check[#ground_check+1] = ground_check[#ground_check] - 25
 until ground_check[#ground_check] < 26
