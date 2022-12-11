@@ -315,7 +315,7 @@ local autopilot_avenger = menu.add_feature("Move Avenger to WP","action",main_me
         menu.notify("A pilot is already active.","ERROR",nil,0x0000FF)
     end
 end)
-autopilot_avenger.hint = "Will spawn a pilot to drive the Avenger to your Waypoint"
+autopilot_avenger.hint = "Will spawn a pilot to drive the Avenger to your Waypoint\nWONT WORK IF AVENGER IS IN THE AIR WITH AUTOPILOT ENABLED"
 
 
 local avenger_clear = menu.add_feature("Clean All", "action", main_menu.id, function()
@@ -389,9 +389,31 @@ local tp_avenger_inside_passenger = menu.add_feature("TP inside Avenger as Passe
 end)
 tp_avenger_inside.hint = "Teleports you inside your Avenger as passenger"
 
+local force_avenger_down = menu.add_feature("Force Avenger to Land","action",main_menu.id, function()
+    if avenger ~= 0 then
+        menu.notify("Forcing Avenger to go Land..","Avenger Utils",nil,0x00AAFF)
+        while true do
+            local avenger_vel = entity.get_entity_velocity(avenger)
+            entity.set_entity_velocity(avenger,v3(avenger_vel.x, avenger_vel.y, -10))
+            local height = native.call(0x1DD55701034110E5, avenger):__tonumber()
+            system.yield(0)
+            if height < 2.8 then
+                menu.notify("Avenger touched the floor!","Avenger Utils",nil,0x0FF00)
+                vehicle.set_vehicle_engine_on(avenger, false, false, true)
+                break
+            end
+            if not entity.is_an_entity(avenger) then
+                break
+            end
+        end
+    else
+        menu.notify("No Avenger registered!\nUse 'Find and Register Avenger' to register it","ERROR",nil,0x0000FF)
+    end
+end)
+
     
 
-if true then
+if false then
     local debug_menu = menu.add_feature("Debug","parent",main_menu.id)
 
     local debug_get_vtol = menu.add_feature("Get VTOL", "action", debug_menu.id, function()
