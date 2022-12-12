@@ -69,26 +69,6 @@ local is_taxi_active = false
 
 local last_drive = {}
 
-local function clear_all_noyield(delay)
-    if delay and type(delay) == "number" then
-        system.yield(delay)
-    end
-
-    for k,v in pairs(blips) do
-        ui.remove_blip(v)
-    end
-
-    print("Deleting",taxi_driver)
-    entity.delete_entity(taxi_driver or 0)
-
-    entity.delete_entity(taxi_veh or 0)
-
-    is_taxi_active = false
-    
-    merc_peds = {}
-    taxi_veh = 0
-end
-
 local function get_ground(pos)
     for k,v in ipairs(ground_check) do
         native.call(0x07503F7948F491A7, v3(pos.x, pos.y, v))
@@ -179,8 +159,6 @@ local taxi_speed = menu.add_feature("Speed = [23]", "action", main_menu.id, func
         menu.notify("Speed updated to "..vehicle_speed,"Updated Speed", nil, 0x00FF00)
         last_drive["speed"] = vehicle_speed
         resume_last_drive()
-    else
-        menu.notify("Speed not updated, No active taxi","Error", nil, 0x0000FF)
     end
 end)
 taxi_speed.hint = "Choose the speed of the driver. Default is 23 (same as a taxi with quick mode)"
@@ -257,6 +235,28 @@ taxi_allowfront.hint = "Allows the player to enter front passenger seat in a 3+ 
 local taxi_per_veh = menu.add_feature("Use personal vehicle", "toggle", main_menu.id, function(ft)
 end)
 taxi_per_veh.hint = "Use the player's personal vehicle instead of a new one"
+
+local function clear_all_noyield(delay)
+    if delay and type(delay) == "number" then
+        system.yield(delay)
+    end
+
+    for k,v in pairs(blips) do
+        ui.remove_blip(v)
+    end
+
+    print("Deleting",taxi_driver)
+    entity.delete_entity(taxi_driver or 0)
+    
+    if not taxi_per_veh.on then
+        entity.delete_entity(taxi_veh or 0)
+    end
+
+    is_taxi_active = false
+    
+    merc_peds = {}
+    taxi_veh = 0
+end
 
 local function clear_all(delay,peds,vehicle)
     if delay and type(delay) == "number" then
@@ -437,9 +437,9 @@ local taxi_spawn = menu.add_feature("Spawn Taxi", "action", main_menu.id, functi
     request_control(taxi_veh)
 
     request_model(vehicle_hash)
-    ai.task_vehicle_drive_to_coord(taxi_driver, taxi_veh, destv3_safe, 5, 0, vehicle_hash, vehicle_drive, 50, 10)
+    ai.task_vehicle_drive_to_coord(taxi_driver, taxi_veh, destv3_safe, 5, 0, vehicle_hash, vehicle_drive, 30, 10)
     system.yield(250)
-    ai.task_vehicle_drive_to_coord(taxi_driver, taxi_veh, destv3_safe, 5, 0, vehicle_hash, vehicle_drive, 50, 10)
+    ai.task_vehicle_drive_to_coord(taxi_driver, taxi_veh, destv3_safe, 5, 0, vehicle_hash, vehicle_drive, 30, 10)
     streaming.set_model_as_no_longer_needed(vehicle_hash)
 
     last_drive = {
@@ -522,23 +522,31 @@ local taxi_spawn = menu.add_feature("Spawn Taxi", "action", main_menu.id, functi
             system.yield(300)
             vehicle.start_vehicle_horn(taxi_veh, 1500, 0, false)
 
-            if seat_count > 2 then
-                repeat
-                    system.yield(0)
-                until vehicle.get_ped_in_vehicle_seat(taxi_veh, 1) == 0 and vehicle.get_ped_in_vehicle_seat(taxi_veh, 2) == 0 and vehicle.get_ped_in_vehicle_seat(taxi_veh, 3) == 0 and vehicle.get_ped_in_vehicle_seat(taxi_veh, 4) == 0
+            if not taxi_per_veh.on then
+                if seat_count > 2 then
+                    repeat
+                        system.yield(0)
+                    until vehicle.get_ped_in_vehicle_seat(taxi_veh, 1) == 0 and vehicle.get_ped_in_vehicle_seat(taxi_veh, 2) == 0 and vehicle.get_ped_in_vehicle_seat(taxi_veh, 3) == 0 and vehicle.get_ped_in_vehicle_seat(taxi_veh, 4) == 0
+                else
+                    repeat
+                        system.yield(0)
+                    until vehicle.get_ped_in_vehicle_seat(taxi_veh, 0) == 0
+                end
             else
-                repeat
-                    system.yield(0)
-                until vehicle.get_ped_in_vehicle_seat(taxi_veh, 0) == 0
+                vehicle.set_vehicle_doors_locked(taxi_veh, 1)
             end
+
+            native.call(0x684785568EF26A22, taxi_veh, false)
+            native.call(0xE4E2FD323574965C, taxi_veh, false)
 
             system.yield(3000)
 
             if not taxi_per_veh.on then
                 native.call(0xDE564951F95E09ED, taxi_veh, true, true)
-                native.call(0xDE564951F95E09ED, taxi_driver, true, true)
-                system.yield(2000)
             end 
+
+            native.call(0xDE564951F95E09ED, taxi_driver, true, true)
+            system.yield(2000)
 
             clear_all(nil,true,true)
             menu.notify("Thanks you for using JJS-Taxi!","Thanks You",nil,0xc203fc)
@@ -600,7 +608,12 @@ local taxi_spawn_pl = menu.add_player_feature("Spawn Taxi", "action", player_men
     local seat_count = vehicle.get_vehicle_model_number_of_seats(vehicle_hash)
 
     local s_point = table_random(points)
-    local s_pos = v3(s_point.pos.x,s_point.pos.y,s_point.pos.z)
+    local s_pos
+    if not taxi_per_veh.on then
+        s_pos = v3(s_point.pos.x,s_point.pos.y,s_point.pos.z)
+    else
+        s_pos = entity.get_entity_coords(player.get_personal_vehicle())
+    end
     --s_pos = player_pos + v3(5,0,0)
 
     if not taxi_per_veh.on then
@@ -759,17 +772,31 @@ local taxi_spawn_pl = menu.add_player_feature("Spawn Taxi", "action", player_men
             system.yield(300)
             vehicle.start_vehicle_horn(taxi_veh, 1500, 0, false)
 
-            if seat_count > 2 then
-                repeat
-                    system.yield(0)
-                until vehicle.get_ped_in_vehicle_seat(taxi_veh, 1) == 0 and vehicle.get_ped_in_vehicle_seat(taxi_veh, 2) == 0 and vehicle.get_ped_in_vehicle_seat(taxi_veh, 3) == 0 and vehicle.get_ped_in_vehicle_seat(taxi_veh, 4) == 0
+            if not taxi_per_veh.on then
+                if seat_count > 2 then
+                    repeat
+                        system.yield(0)
+                    until vehicle.get_ped_in_vehicle_seat(taxi_veh, 1) == 0 and vehicle.get_ped_in_vehicle_seat(taxi_veh, 2) == 0 and vehicle.get_ped_in_vehicle_seat(taxi_veh, 3) == 0 and vehicle.get_ped_in_vehicle_seat(taxi_veh, 4) == 0
+                else
+                    repeat
+                        system.yield(0)
+                    until vehicle.get_ped_in_vehicle_seat(taxi_veh, 0) == 0
+                end
             else
-                repeat
-                    system.yield(0)
-                until vehicle.get_ped_in_vehicle_seat(taxi_veh, 0) == 0
+                vehicle.set_vehicle_doors_locked(taxi_veh, 1)
             end
 
-            system.yield(5000)
+            native.call(0x684785568EF26A22, taxi_veh, false)
+            native.call(0xE4E2FD323574965C, taxi_veh, false)
+
+            system.yield(3000)
+
+            if not taxi_per_veh.on then
+                native.call(0xDE564951F95E09ED, taxi_veh, true, true)
+            end 
+
+            native.call(0xDE564951F95E09ED, taxi_driver, true, true)
+            system.yield(2000)
 
             clear_all(nil,true,true)
             menu.notify("Thanks you for using JJS-Taxi!","Thanks You",nil,0xc203fc)
