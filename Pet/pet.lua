@@ -129,7 +129,7 @@ local animals_table = {
 local preset_data = {}
 
 for k,v in ipairs(animals_table) do
-    preset_data[#preset_data+1] = v.name
+    preset_data[#preset_data+1] = v.short_name
 end
 
 local follow_types = {
@@ -144,7 +144,7 @@ local main_menu = menu.add_feature("Pet","parent",0)
 local pet_ped_preset = menu.add_feature("Preset Model","action_value_str",main_menu.id, function(ft)
     selected_pet = animals_table[ft.value+1]
     if selected_pet ~= nil then
-        ped_hash = selected_pet.hash
+        ped_hash = gameplay.get_hash_key(selected_pet.name)
         menu.notify("Set the pet model to "..selected_pet.name,"Success",nil,0x00FF00)
     else
         menu.notify("Selected pet is invalid!","Error",nil,0x0000FF)
