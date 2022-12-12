@@ -93,37 +93,37 @@ function front_of_pos(_pos,_rot,_dist)
 end
 
 local animals_table = {
-    {name="A_C_Westy",hash=gameplay.get_hash_key("A_C_Westy"),short_name="Westy"},
-    {name="A_C_TigerShark",hash=gameplay.get_hash_key("A_C_TigerShark"),short_name="Tiger Shark"},
-    {name="A_C_Shepherd",hash=gameplay.get_hash_key("A_C_Shepherd"),short_name="Shepherd"},
-    {name="A_C_Rottweiler",hash=gameplay.get_hash_key("A_C_Rottweiler"),short_name="Rottweiler"},
-    {name="A_C_Rat",hash=gameplay.get_hash_key("A_C_Rat"),short_name="Rat"},
-    {name="A_C_Rhesus",hash=gameplay.get_hash_key("A_C_Rhesus"),short_name="Rhesus"},
-    {name="A_C_Retriever",hash=gameplay.get_hash_key("A_C_Retriever"),short_name="Retriever"},
-    {name="A_C_Rabbit",hash=gameplay.get_hash_key("A_C_Rabbit"),short_name="Rabbit"},
-    {name="A_C_Pug",hash=gameplay.get_hash_key("A_C_Pug"),short_name="Pug"},
-    {name="A_C_Poodle",hash=gameplay.get_hash_key("A_C_Poodle"),short_name="Poodle"},
-    {name="A_C_Pigeon",hash=gameplay.get_hash_key("A_C_Pigeon"),short_name="Pigeon"},
-    {name="A_C_Pig",hash=gameplay.get_hash_key("A_C_Pig"),short_name="Pig"},
-    {name="A_C_Orleans",hash=gameplay.get_hash_key("A_C_Orleans"),short_name="Orleans"},
-    {name="A_C_MountainLion",hash=gameplay.get_hash_key("A_C_MountainLion"),short_name="Mountain Lion"},
-    {name="A_C_KillerWhale",hash=gameplay.get_hash_key("A_C_KillerWhale"),short_name="Killer Whale"},
-    {name="A_C_Husky",hash=gameplay.get_hash_key("A_C_Husky"),short_name="Husky"},
-    {name="A_C_Humpback",hash=gameplay.get_hash_key("A_C_Humpback"),short_name="Humpback"},
-    {name="A_C_Hen",hash=gameplay.get_hash_key("A_C_Hen"),short_name="Hen"},
-    {name="A_C_HammerShark",hash=gameplay.get_hash_key("A_C_HammerShark"),short_name="Hammer Shark"},
-    {name="A_C_Fish",hash=gameplay.get_hash_key("A_C_Fish"),short_name="Fish"},
-    {name="A_C_Dolphin",hash=gameplay.get_hash_key("A_C_Dolphin"),short_name="Dolphin"},
-    {name="A_C_Deer",hash=gameplay.get_hash_key("A_C_Deer"),short_name="Deer"},
-    {name="A_C_Crow",hash=gameplay.get_hash_key("A_C_Crow"),short_name="Crow"},
-    {name="A_C_Coyote",hash=gameplay.get_hash_key("A_C_Coyote"),short_name="Coyote"},
-    {name="A_C_Cow",hash=gameplay.get_hash_key("A_C_Cow"),short_name="Cow"},
-    {name="A_C_Cormorant",hash=gameplay.get_hash_key("A_C_Cormorant"),short_name="Cormorant"},
-    {name="A_C_Chop",hash=gameplay.get_hash_key("A_C_Chop"),short_name="Chop"},
-    {name="A_C_Chimp",hash=gameplay.get_hash_key("A_C_Chimp"),short_name="Chimp"},
-    {name="A_C_ChickenHawk",hash=gameplay.get_hash_key("A_C_ChickenHawk"),short_name="Chicken Hawk"},
-    {name="A_C_Cat",hash=gameplay.get_hash_key("A_C_Cat"),short_name="Cat"},
-    {name="A_C_Boar",hash=gameplay.get_hash_key("A_C_Boar"),short_name="Boar"},
+    {name="A_C_Westy", short_name="Westy"},
+    {name="A_C_TigerShark", short_name="Tiger Shark"},
+    {name="A_C_Shepherd", short_name="Shepherd"},
+    {name="A_C_Rottweiler", short_name="Rottweiler"},
+    {name="A_C_Rat", short_name="Rat"},
+    {name="A_C_Rhesus", short_name="Rhesus"},
+    {name="A_C_Retriever", short_name="Retriever"},
+    {name="A_C_Rabbit", short_name="Rabbit"},
+    {name="A_C_Pug", short_name="Pug"},
+    {name="A_C_Poodle", short_name="Poodle"},
+    {name="A_C_Pigeon", short_name="Pigeon"},
+    {name="A_C_Pig", short_name="Pig"},
+    {name="A_C_Orleans", short_name="Orleans"},
+    {name="A_C_MountainLion", short_name="Mountain Lion"},
+    {name="A_C_KillerWhale", short_name="Killer Whale"},
+    {name="A_C_Husky", short_name="Husky"},
+    {name="A_C_Humpback", short_name="Humpback"},
+    {name="A_C_Hen", short_name="Hen"},
+    {name="A_C_HammerShark", short_name="Hammer Shark"},
+    {name="A_C_Fish", short_name="Fish"},
+    {name="A_C_Dolphin", short_name="Dolphin"},
+    {name="A_C_Deer", short_name="Deer"},
+    {name="A_C_Crow", short_name="Crow"},
+    {name="A_C_Coyote", short_name="Coyote"},
+    {name="A_C_Cow", short_name="Cow"},
+    {name="A_C_Cormorant", short_name="Cormorant"},
+    {name="A_C_Chop", short_name="Chop"},
+    {name="A_C_Chimp", short_name="Chimp"},
+    {name="A_C_ChickenHawk", short_name="Chicken Hawk"},
+    {name="A_C_Cat", short_name="Cat"},
+    {name="A_C_Boar", short_name="Boar"},
 }
 
 local preset_data = {}
@@ -144,14 +144,14 @@ local main_menu = menu.add_feature("Pet","parent",0)
 local pet_ped_preset = menu.add_feature("Preset Model","action_value_str",main_menu.id, function(ft)
     selected_pet = animals_table[ft.value+1]
     if selected_pet ~= nil then
-        ped_hash = gameplay.get_hash_key(name)
+        ped_hash = selected_pet.hash
         menu.notify("Set the pet model to "..selected_pet.name,"Success",nil,0x00FF00)
     else
         menu.notify("Selected pet is invalid!","Error",nil,0x0000FF)
     end
 end)
 pet_ped_preset:set_str_data(preset_data)
-pet_ped_preset.hint = "Choose the ped model for your pet.\nBirds doesn't fly and walks slowly instead.. idk why yet."
+pet_ped_preset.hint = "Choose the ped model for your pet. \nBirds will walk slowly instead of flying, not sure why"
 
 local pet_ped = menu.add_feature("Custom Model = [A_C_Cow]", "action", main_menu.id, function(ft)
     local status = 1
