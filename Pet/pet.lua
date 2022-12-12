@@ -1,5 +1,5 @@
 if menu.get_trust_flags() ~= (1 << 2) then
-    menu.notify("Avenger Utils requires \"Natives\" Trust flag", "Trust Error", nil, 0x0000FF)
+    menu.notify("Pets requires \"Natives\" Trust flag", "Trust Error", nil, 0x0000FF)
 end
 
 
@@ -134,8 +134,8 @@ end
 
 local follow_types = {
     "Default",
-    "Circle1",
-    "Circle2",
+    "Circle",
+    "Circle 2",
     "Line"
 }
 
@@ -144,14 +144,14 @@ local main_menu = menu.add_feature("Pet","parent",0)
 local pet_ped_preset = menu.add_feature("Preset Model","action_value_str",main_menu.id, function(ft)
     selected_pet = animals_table[ft.value+1]
     if selected_pet ~= nil then
-        ped_hash = selected_pet.hash
+        ped_hash = gameplay.get_hash_key(name)
         menu.notify("Set the pet model to "..selected_pet.name,"Success",nil,0x00FF00)
     else
         menu.notify("Selected pet is invalid!","Error",nil,0x0000FF)
     end
 end)
 pet_ped_preset:set_str_data(preset_data)
-pet_ped_preset.hint = "Choose the ped model for your pet."
+pet_ped_preset.hint = "Choose the ped model for your pet.\nBirds doesn't fly and walks slowly instead.. idk why yet."
 
 local pet_ped = menu.add_feature("Custom Model = [A_C_Cow]", "action", main_menu.id, function(ft)
     local status = 1
@@ -285,6 +285,7 @@ local tp_pets = menu.add_feature("Teleport Pets","action",main_menu.id, function
         system.yield(0)
     end
 end)
+tp_pets.hint = "Teleport all your pets to your position"
 
 local clean_pets = menu.add_feature("Clear All (0) Pets","action",main_menu.id, function()
     clear_all(nil,true)
