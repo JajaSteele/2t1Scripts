@@ -22,7 +22,7 @@ local function clear_all_noyield(delay)
     end
 
     for k,v in pairs(pets_ents) do
-        entity.delete_entity(v or 0)
+        entity.delete_entity(v.id or 0)
     end
     
     pets_ents = {}
@@ -66,15 +66,15 @@ local function clear_all(delay,peds)
 
     for k,v in pairs(pets_ents) do
         menu.create_thread(function()
-            native.call(0xDE564951F95E09ED, v, true, true)
+            native.call(0xDE564951F95E09ED, v.id, true, true)
             system.yield(1500)
             local attempts = 0
-            request_control(v)
+            request_control(v.id)
             repeat
-                entity.delete_entity(v)
+                entity.delete_entity(v.id)
                 system.yield(0)
                 attempts = attempts+1
-            until not entity.is_an_entity(v) or attempts > 30
+            until not entity.is_an_entity(v.id) or attempts > 30
         end)
     end
 
@@ -215,7 +215,7 @@ follow_offset.hint = "Set the distance at which your pets will follow you"
 
 local pet_godmod = menu.add_feature("God Mode", "toggle", main_menu.id, function(ft)
     for k,v in pairs(pets_ents) do
-        entity.set_entity_god_mode(v, ft.on)
+        entity.set_entity_god_mode(v.id, ft.on)
         system.yield(0)
     end
     menu.notify("Applied god mode '"..tostring(ft.on).."' to all existing pets","Pet God Mode",nil,0x00FF00)
@@ -242,7 +242,10 @@ local spawn_pet = menu.add_feature("Spawn Pet","action", main_menu.id, function(
 
     native.call(0x1F4ED342ACEFE62D, new_pet, true, false)
 
-    pets_ents[#pets_ents+1] = new_pet
+    pets_ents[#pets_ents+1] = {
+        id=new_pet,
+        faded=false
+    }
 
     local pet_id = #pets_ents
     local blip_name = "pet_"..pet_id
@@ -279,9 +282,9 @@ local tp_pets = menu.add_feature("Teleport Pets","action",main_menu.id, function
         local local_player = player.player_id()
         local player_pos = player.get_player_coords(local_player)
 
-        request_control(v)
-        entity.set_entity_coords_no_offset(v, player_pos+v3(0,0,0))
-        native.call(0x1F4ED342ACEFE62D, v, true, false)
+        request_control(v.id)
+        entity.set_entity_coords_no_offset(v.id, player_pos+v3(0,0,0))
+        native.call(0x1F4ED342ACEFE62D, v.id, true, false)
         system.yield(0)
     end
 end)
@@ -300,7 +303,7 @@ menu.create_thread(function()
             local player_pos = player.get_player_coords(local_player)
             local player_ped = player.get_player_ped(local_player)
 
-            local pet_pos = entity.get_entity_coords(v)
+            local pet_pos = entity.get_entity_coords(v.id)
 
             local dist_x = math.abs(player_pos.x - pet_pos.x)
             local dist_y = math.abs(player_pos.y - pet_pos.y)
@@ -309,15 +312,24 @@ menu.create_thread(function()
             local full_dist = dist_x+dist_y+dist_z
 
             if full_dist > 100 and ped.get_vehicle_ped_is_using(player_ped) == 0 then
-                request_control(v)
-                entity.set_entity_coords_no_offset(v, player_pos+v3(0,0,0))
-                native.call(0x1F4ED342ACEFE62D, v, true, false)
+                request_control(v.id)
+                entity.set_entity_coords_no_offset(v.id, player_pos+v3(0,0,0))
+                native.call(0x1F4ED342ACEFE62D, v.id, true, false)
+            elseif full_dist > 120 and ped.get_vehicle_ped_is_using(player_ped) ~= 0 then
+                native.call(0xDE564951F95E09ED, v.id, true, true)
+                pets_ents[k].faded = true
             end
-            if entity.is_entity_dead(v) then
+
+            if full_dist < 80 and v.faded == true then
+                pets_ents[k].faded = false
+                native.call(0x1F4ED342ACEFE62D, v.id, true, true)
+            end
+
+            if entity.is_entity_dead(v.id) then
                 menu.notify("Pet "..k.." died!","Oh no!",nil,0x0000FF)
                 ui.remove_blip(blips["pet_"..k])
                 if del_bodies.on then
-                    entity.delete_entity(v)
+                    entity.delete_entity(v.id)
                 end
                 pets_ents[k] = nil
             end
