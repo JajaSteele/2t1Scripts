@@ -269,6 +269,8 @@ local spawn_pet = menu.add_feature("Spawn Pet","action", main_menu.id, function(
     ped.set_group_formation(player_group, follow_type.value)
     ped.set_group_formation_spacing(player_group, follow_offset.value/2, follow_offset.value/2, 0)
 
+    entity.set_entity_as_mission_entity(new_pet,true,false)
+
     native.call(0x1913FE4CBF41C463, new_pet, 13, true)
 
     entity.set_entity_god_mode(new_pet, pet_godmod.on)
@@ -315,6 +317,7 @@ menu.create_thread(function()
                 request_control(v.id)
                 entity.set_entity_coords_no_offset(v.id, player_pos+v3(0,0,0))
                 native.call(0x1F4ED342ACEFE62D, v.id, true, false)
+                native.call(0xA53ED5520C07654A, v.id, player_ped, false)
             elseif full_dist > 120 and ped.get_vehicle_ped_is_using(player_ped) ~= 0 then
                 native.call(0xDE564951F95E09ED, v.id, true, true)
                 pets_ents[k].faded = true
@@ -323,6 +326,7 @@ menu.create_thread(function()
             if full_dist < 80 and v.faded == true then
                 pets_ents[k].faded = false
                 native.call(0x1F4ED342ACEFE62D, v.id, true, true)
+                native.call(0xA53ED5520C07654A, v.id, player_ped, false)
             end
 
             if entity.is_entity_dead(v.id) then
