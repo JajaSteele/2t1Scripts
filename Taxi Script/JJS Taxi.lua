@@ -1,3 +1,9 @@
+if menu.get_trust_flags() ~= (1 << 2) then
+    menu.notify("JJS Taxi requires \"Natives\" Trust flag", "Trust Error", nil, 0x0000FF)
+    menu.exit()
+end
+
+
 local function request_model(_hash)
     if not streaming.has_model_loaded(_hash) then
         streaming.request_model(_hash)
@@ -83,10 +89,6 @@ local ground_check = {900}
 repeat
     ground_check[#ground_check+1] = ground_check[#ground_check] - 25
 until ground_check[#ground_check] < 26
-
-if menu.get_trust_flags() ~= (1 << 2) then
-    menu.notify("JJS Taxi requires \"Natives\" Trust flag", "Trust Error", nil, 0x0000FF)
-end
 
 local vehicle_hash = gameplay.get_hash_key("nightshark")
 local vehicle_name = "nightshark"

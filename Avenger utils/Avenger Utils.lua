@@ -1,5 +1,6 @@
 if menu.get_trust_flags() ~= (1 << 2) then
     menu.notify("Avenger Utils requires \"Natives\" Trust flag", "Trust Error", nil, 0x0000FF)
+    menu.exit()
 end
 
 local ped_hash = 988062523

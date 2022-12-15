@@ -1,5 +1,6 @@
 if menu.get_trust_flags() ~= (1 << 2) then
     menu.notify("Pets requires \"Natives\" Trust flag", "Trust Error", nil, 0x0000FF)
+    menu.exit()
 end
 
 
@@ -196,17 +197,37 @@ pet_ped.hint = "Choose the custom ped model for your pet."
 
 local follow_type = menu.add_feature("Follow Type","autoaction_value_str",main_menu.id,function(ft)
     local local_player = player.player_id()
+    local player_ped = player.get_player_ped(local_player)
     local player_group = player.get_player_group(local_player)
+
+    for k,v in pairs(pets_ents) do
+        request_control(v.id)
+        ped.set_ped_as_group_member(v.id, player_group)
+        system.yield(0)
+    end
+    ped.set_ped_as_group_leader(player_ped, player_group)
+
     ped.set_group_formation(player_group, ft.value)
+    print("Set group formation to "..ft.value)
 end)
 follow_type:set_str_data(follow_types)
 follow_type.hint = "Set how the pets will follow you (formation)"
 
 local follow_offset = menu.add_feature("Follow Length = [1.5]","autoaction_slider",main_menu.id, function(ft)
     local local_player = player.player_id()
+    local player_ped = player.get_player_ped(local_player)
     local player_group = player.get_player_group(local_player)
+
+    for k,v in pairs(pets_ents) do
+        request_control(v.id)
+        ped.set_ped_as_group_member(v.id, player_group)
+        system.yield(0)
+    end
+    ped.set_ped_as_group_leader(player_ped, player_group)
+
     ped.set_group_formation_spacing(player_group, ft.value/2, ft.value/2, 0)
     ft.name = string.format("Follow Length = [%.1f]",ft.value/2)
+    print("Set group spacing to "..ft.value/2)
 end)
 follow_offset.min = 1
 follow_offset.max = 15
@@ -319,11 +340,13 @@ menu.create_thread(function()
                 native.call(0x1F4ED342ACEFE62D, v.id, true, false)
                 native.call(0xA53ED5520C07654A, v.id, player_ped, false)
             elseif full_dist > 120 and ped.get_vehicle_ped_is_using(player_ped) ~= 0 then
+                request_control(v.id)
                 native.call(0xDE564951F95E09ED, v.id, true, true)
                 pets_ents[k].faded = true
             end
 
             if full_dist < 80 and v.faded == true then
+                request_control(v.id)
                 pets_ents[k].faded = false
                 native.call(0x1F4ED342ACEFE62D, v.id, true, true)
                 native.call(0xA53ED5520C07654A, v.id, player_ped, false)
@@ -333,6 +356,7 @@ menu.create_thread(function()
                 menu.notify("Pet "..k.." died!","Oh no!",nil,0x0000FF)
                 ui.remove_blip(blips["pet_"..k])
                 if del_bodies.on then
+                    request_control(v.id)
                     entity.delete_entity(v.id)
                 end
                 pets_ents[k] = nil
