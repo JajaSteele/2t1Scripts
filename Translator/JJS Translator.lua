@@ -1,5 +1,5 @@
 if menu.get_trust_flags() ~= (1 << 3) then
-    menu.notify("Pets requires \"HTTP\" Trust flag", "Trust Error", nil, 0x0000FF)
+    menu.notify("JJS Translator requires \"HTTP\" Trust flag", "Trust Error", nil, 0x0000FF)
     menu.exit()
 end
 
