@@ -41,6 +41,40 @@ local function table_random(table1)
     return table1[random_table]
 end
 
+local radio_stations = {
+    {id="RADIO_11_TALK_02", name="Blaine County Radio"},
+    {id="RADIO_12_REGGAE", name="The Blue Ark"},
+    {id="RADIO_13_JAZZ", name="Worldwide FM"},
+    {id="RADIO_14_DANCE_02", name="FlyLo FM"},
+    {id="RADIO_15_MOTOWN", name="The Lowdown 9.11"},
+    {id="RADIO_20_THELAB", name="The Lab"},
+    {id="RADIO_16_SILVERLAKE", name="Radio Mirror Park"},
+    {id="RADIO_17_FUNK", name="Space 103.2"},
+    {id="RADIO_18_90S_ROCK", name="Vinewood Boulevard Radio"},
+    {id="RADIO_21_DLC_XM17", name="Blonded LS 97.8 FM"},
+    {id="RADIO_22_DLC_BATTLE_MIX1_RADIO", name="LS Underground Radio"},
+    {id="RADIO_23_DLC_XM19_RADIO", name="iFruit Radio"},
+    {id="RADIO_19_USER", name="Self Radio"},
+    {id="RADIO_01_CLASS_ROCK", name="LS Rock Radio"},
+    {id="RADIO_02_POP", name="Non-Stop-Pop FM"},
+    {id="RADIO_03_HIPHOP_NEW", name="Radio LS"},
+    {id="RADIO_04_PUNK", name="Channel X"},
+    {id="RADIO_05_TALK_01", name="West Coast Talk"},
+    {id="RADIO_06_COUNTRY", name="Rebel Radio"},
+    {id="RADIO_07_DANCE_01", name="Soulwax FM"},
+    {id="RADIO_08_MEXICAN", name="East Los FM"},
+    {id="RADIO_09_HIPHOP_OLD", name="West Coast Classics"},
+    {id="RADIO_36_AUDIOPLAYER", name="Media Player"},
+    {id="RADIO_35_DLC_HEI4_MLR", name="The Music Locker"},
+    {id="RADIO_34_DLC_HEI4_KULT", name="Kult FM"},
+    {id="RADIO_27_DLC_PRHEI4", name="Still Slipping LS"},
+}
+
+local radio_data = {}
+for k,v in ipairs(radio_stations) do
+    radio_data[#radio_data+1] = v.name
+end
+
 function vector_to_heading(_target,_start)
     return math.atan((_target.x - _start.x), (_target.y - _start.y)) * -180 / math.pi
 end
@@ -225,6 +259,23 @@ end)
 taxi_conv:set_str_data({"Open if no rain","Open","Close"})
 taxi_conv.hint = "Choose the mode of vehicles with convertible roof"
 
+local radio_menu = menu.add_feature("Radio","parent",main_menu.id)
+
+local taxi_radio = menu.add_feature("Station","autoaction_value_str",radio_menu.id,function(ft)
+    if is_taxi_active and entity.is_an_entity(taxi_veh or 0) then
+        native.call(0x1B9C0099CB942AC6, taxi_veh, radio_stations[ft.value+1].id)
+    end
+end)
+taxi_radio.hint = "Choose the radio station to use!"
+taxi_radio:set_str_data(radio_data)
+
+local taxi_radio_toggle = menu.add_feature("Enable","toggle",radio_menu.id,function(ft)
+    if is_taxi_active and entity.is_an_entity(taxi_veh or 0) then
+        native.call(0x3B988190C0AA6C0B, taxi_veh, ft.on)
+    end
+end)
+taxi_radio_toggle.hint = "Toggle the radio ON or OFF"
+
 local taxi_allowfront = menu.add_feature("Allow Front Passenger", "toggle", main_menu.id, function(ft)
     if is_taxi_active and ft.on then
         native.call(0xBE70724027F85BCD, taxi_veh or 0, 1, 0)
@@ -258,7 +309,7 @@ local function clear_all_noyield(delay)
     taxi_veh = 0
 end
 
-local function clear_all(delay,peds,vehicle)
+local function clear_all(delay,peds,vehicles)
     if delay and type(delay) == "number" then
         system.yield(delay)
     end
@@ -284,7 +335,7 @@ local function clear_all(delay,peds,vehicle)
 
     local attempts = 0
 
-    if vehicle and taxi_veh ~= nil and not taxi_per_veh.on then
+    if vehicles and taxi_veh ~= nil and not taxi_per_veh.on then
         request_control(taxi_veh)
         repeat
             entity.delete_entity(taxi_veh)
@@ -292,9 +343,14 @@ local function clear_all(delay,peds,vehicle)
             system.yield(0)
         until not entity.is_an_entity(taxi_veh) or attempts > 100
         taxi_veh = 0
+    elseif taxi_per_veh.on and entity.is_an_entity(taxi_veh) then
+        vehicle.set_vehicle_doors_locked(taxi_veh, 1)
+
+        native.call(0x684785568EF26A22, taxi_veh, false)
+        native.call(0xE4E2FD323574965C, taxi_veh, false)
     end
 
-    if vehicle and peds then
+    if vehicles and peds then
         is_taxi_active = false
     end
 end
@@ -417,7 +473,12 @@ local taxi_spawn = menu.add_feature("Spawn Taxi", "action", main_menu.id, functi
     until ped.is_ped_in_vehicle(player_ped, taxi_veh) or not is_taxi_active
     menu.notify("Welcome in JJS-Taxi!","Welcome",nil,0x00FF00)
 
-
+    if taxi_radio_toggle.on then
+        native.call(0x3B988190C0AA6C0B, taxi_veh, true)
+        native.call(0x1B9C0099CB942AC6, taxi_veh, radio_stations[taxi_radio.value+1].id)
+    else
+        native.call(0x3B988190C0AA6C0B, taxi_veh, false)
+    end
 
     local dest = ui.get_waypoint_coord()
     local ground_level = get_ground(dest)
@@ -681,6 +742,13 @@ local taxi_spawn_pl = menu.add_player_feature("Spawn Taxi", "action", player_men
         system.yield(250)
     until ped.is_ped_in_vehicle(player_ped, taxi_veh) or not is_taxi_active
     menu.notify("Welcome in JJS-Taxi!","Welcome",nil,0x00FF00)
+
+    if taxi_radio_toggle.on then
+        native.call(0x3B988190C0AA6C0B, taxi_veh, true)
+        native.call(0x1B9C0099CB942AC6, taxi_veh, radio_stations[taxi_radio.value+1].id)
+    else
+        native.call(0x3B988190C0AA6C0B, taxi_veh, false)
+    end
 
     blips.tar_player = ui.add_blip_for_entity(tar_player_ped)
     ui.set_blip_sprite(blips.tar_player, 58)
