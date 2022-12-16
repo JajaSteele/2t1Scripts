@@ -263,12 +263,13 @@ taxi_conv.hint = "Choose the mode of vehicles with convertible roof"
 
 local radio_menu = menu.add_feature("Radio","parent",main_menu.id)
 
-local taxi_radio = menu.add_feature("Station","autoaction_value_str",radio_menu.id,function(ft)
+local taxi_radio = menu.add_feature("Station","action_value_str",radio_menu.id,function(ft)
     if is_taxi_active and entity.is_an_entity(taxi_veh or 0) then
         native.call(0x1B9C0099CB942AC6, taxi_veh, radio_stations[ft.value+1].id)
+        menu.notify("Set radio to "..radio_stations[ft.value+1].name.."("..radio_stations[ft.value+1].id..")","Radio",nil,0xFF00FF)
     end
 end)
-taxi_radio.hint = "Choose the radio station to use!"
+taxi_radio.hint = "Choose the radio station to use!\nYou must 'Select' the radio after choosing the one you want."
 taxi_radio:set_str_data(radio_data)
 
 local taxi_radio_toggle = menu.add_feature("Enable","toggle",radio_menu.id,function(ft)
