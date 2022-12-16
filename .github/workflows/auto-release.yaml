@@ -2,9 +2,9 @@
 name: Automatic Releases
 
 on:
-push:
-  branches:
-    - "master"
+  push:
+    branches:
+      - "master"
 
 jobs:
   pre-release:
