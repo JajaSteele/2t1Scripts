@@ -166,6 +166,30 @@ local function get_ground(pos)
     return 50
 end
 
+local function get_water(pos)
+
+    native.call(0x7E3F55ED251B76D3, 0)
+    for k,v in ipairs(ground_check) do
+        native.call(0x07503F7948F491A7, v3(pos.x, pos.y, v))
+        system.yield(0)
+    end
+
+    system.yield(1500)
+
+    for k,v in ipairs(ground_check) do
+        local destv3_check = v3(pos.x, pos.y, v)
+        local waterz = native.ByteBuffer8()
+        native.call(0xF6829842C06AE524, destv3_check, waterz)
+        print(waterz:__tonumber())
+        if waterz:__tonumber() ~= 0 then
+            return waterz:__tonumber()
+        end
+        system.yield(0)
+    end
+
+    return 0
+end
+
 local airstrips = {
     {
         start1={x=-1607.3388671875, y=-2792.3530273438, z=13.976312637329}, 
@@ -198,6 +222,11 @@ local airstrips = {
         start1={x=-617.43798828125, y=6329.6518554688, z=3.4301686286926},
         end1={x=-280.55834960938, y=6537.935546875, z=2.8661694526672},
         name="Procopio Beach"
+    },
+    {
+        start1={x=0, y=0, z=0},
+        end1={x=0, y=0, z=0},
+        name="Custom"
     }
 }
 
@@ -213,6 +242,50 @@ local select_strip = menu.add_feature("Destination","autoaction_value_str",main_
 end)
 select_strip:set_str_data(select_data)
 select_strip.hint = "Select the airstrip to land at. \nMcKenzie Field is unsafe cuz too small runway (high risk of crash)\n\nI found out the vehicle 'seabreeze' easily lands at McKenzie!"
+
+local custom_dest_menu = menu.add_feature("Custom Destination", "parent", main_menu.id)
+custom_dest_menu.hint = "! EXPERIMENTAL !\nHow to use:\n1. Put a waypoint on the start of Runway\n2. Press 'Save Start'\n3. Put a waypoint on the end of Runway\n4. Press 'Save End'"
+
+local custom_dest_start = menu.add_feature("Save Start","action",custom_dest_menu.id, function(ft)
+    local wp = ui.get_waypoint_coord()
+    local wpz = get_ground(wp)
+
+    if wpz < get_water(wp) then
+        wpz = get_water(wp)
+    end
+
+    local wp3 = v3(wp.x, wp.y, wpz)
+
+    airstrips[#airstrips].start1 = {
+        x= wp3.x,
+        y= wp3.y,
+        z= wp3.z
+    }
+
+    menu.notify("Set the custom dest's start to:\nX: "..wp3.x.." Y: "..wp3.y.." Z: "..wp3.z, "Custom Dest", nil, 0x00FF00)
+end)
+custom_dest_start.hint = "Saves the waypoint's position as the custom runway's start"
+
+local custom_dest_end = menu.add_feature("Save End","action",custom_dest_menu.id, function(ft)
+    local wp = ui.get_waypoint_coord()
+    local wpz = get_ground(wp)
+
+    print(wpz)
+    if wpz < get_water(wp) then
+        wpz = get_water(wp)
+    end
+
+    local wp3 = v3(wp.x, wp.y, wpz)
+
+    airstrips[#airstrips].end1 = {
+        x= wp3.x,
+        y= wp3.y,
+        z= wp3.z
+    }
+
+    menu.notify("Set the custom dest's start to:\nX: "..wp3.x.." Y: "..wp3.y.." Z: "..wp3.z, "Custom Dest", nil, 0x00FF00)
+end)
+custom_dest_end.hint = "Saves the waypoint's position as the custom runway's end"
 
 local trans_vehicle = menu.add_feature("Transport Vehicle = [sanchez2]","action",main_menu.id,function(ft)
     local status = 1
