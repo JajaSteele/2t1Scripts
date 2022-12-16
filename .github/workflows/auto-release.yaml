@@ -1,5 +1,5 @@
 ---
-name: "Automatic Releases"
+name: "auto-release"
 
 on:
   push:
