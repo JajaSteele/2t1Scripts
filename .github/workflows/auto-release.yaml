@@ -24,11 +24,11 @@ jobs:
           prerelease: false
           title: "Auto Release"
           files: |
-            */Airline Script/JJS Airline.lua
-            */Taxi Script/JJS Taxi.lua
-            */Translator/JJS Translator.lua
-            */Pet/JJS Pet.lua
-            */Avenger utils/JJS Avenger Utils.lua
+            JJS Airline.lua
+            JJS Taxi.lua
+            JJS Translator.lua
+            JJS Pet.lua
+            JJS Avenger Utils.lua
             
 
 
