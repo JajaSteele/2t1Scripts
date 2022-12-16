@@ -161,7 +161,7 @@ end)
 register_avenger.hint = "Use this to register your avenger. \nWill only work if your Avenger's blip is visible (So must be outside of the avenger)"
 
 
-if false then --DISABLED CUZ ITS GLITCHY AF
+if true then --DISABLED CUZ ITS GLITCHY AF
     local autopilot_avenger = menu.add_feature("Move Avenger to WP","action",main_menu.id,function()
         if not autopilot_active then
             if avenger ~= 0 then
@@ -324,7 +324,7 @@ if false then --DISABLED CUZ ITS GLITCHY AF
             menu.notify("A pilot is already active.","ERROR",nil,0x0000FF)
         end
     end)
-    autopilot_avenger.hint = "Will spawn a pilot to drive the Avenger to your Waypoint\nWONT WORK IF AVENGER IS IN THE AIR WITH AUTOPILOT ENABLED"
+    autopilot_avenger.hint = "!EXPERIMENTAL! Is broke 1 time on 2 lmao\nWill spawn a pilot to drive the Avenger to your Waypoint\nWONT WORK IF AVENGER IS IN THE AIR WITH AUTOPILOT ENABLED"
 
     local avenger_clear = menu.add_feature("Clean All", "action", main_menu.id, function()
         native.call(0xCE2B43770B655F8F, avenger, false)
