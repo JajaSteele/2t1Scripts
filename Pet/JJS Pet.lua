@@ -146,7 +146,7 @@ local follow_types = {
     "Line"
 }
 
-local main_menu = menu.add_feature("Pet","parent",0)
+local main_menu = menu.add_feature("#FFFFC64D#J#FFFFD375#J#FFFFE1A1#S #FFFFF8EB#Pet","parent",0)
 
 local pet_ped_preset = menu.add_feature("Preset Model","action_value_str",main_menu.id, function(ft)
     selected_pet = animals_table[ft.value+1]

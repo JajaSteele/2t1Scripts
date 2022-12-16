@@ -236,7 +236,7 @@ for k,v in ipairs(airstrips) do
 end
 
 
-local main_menu = menu.add_feature("JJS Airline", "parent", 0)
+local main_menu = menu.add_feature("#FFFFC64D#J#FFFFD375#J#FFFFE1A1#S #FFFFF8EB#Airline", "parent", 0)
 
 local select_strip = menu.add_feature("Destination","autoaction_value_str",main_menu.id,function()
 end)
@@ -244,7 +244,7 @@ select_strip:set_str_data(select_data)
 select_strip.hint = "Select the airstrip to land at. \nMcKenzie Field is unsafe cuz too small runway (high risk of crash)\n\nI found out the vehicle 'seabreeze' easily lands at McKenzie!"
 
 local custom_dest_menu = menu.add_feature("Custom Destination", "parent", main_menu.id)
-custom_dest_menu.hint = "! EXPERIMENTAL !\nHow to use:\n1. Put a waypoint on the start of Runway\n2. Press 'Save Start'\n3. Put a waypoint on the end of Runway\n4. Press 'Save End'"
+custom_dest_menu.hint = "#FF0000FF#! EXPERIMENTAL !#DEFAULT#\nHow to use:\n1. Put a waypoint on the start of Runway\n2. Press 'Save Start'\n3. Put a waypoint on the end of Runway\n4. Press 'Save End'"
 
 local custom_dest_start = menu.add_feature("Save Start","action",custom_dest_menu.id, function(ft)
     local wp = ui.get_waypoint_coord()

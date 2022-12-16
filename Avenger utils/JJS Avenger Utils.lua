@@ -148,7 +148,7 @@ local function clear_all(delay,peds)
     end
 end
 
-local main_menu = menu.add_feature("Avenger utils","parent",0)
+local main_menu = menu.add_feature("#FFFFC64D#J#FFFFD375#J#FFFFE1A1#S #FFFFF8EB#Avenger utils","parent",0)
 
 local register_avenger = menu.add_feature("Registered Avenger: ","action",main_menu.id,function()
     avenger = find_avenger()

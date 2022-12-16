@@ -36,7 +36,7 @@ local function removetext(text)
     end
 end
 
-local main_menu = menu.add_feature("Translator", "parent", 0)
+local main_menu = menu.add_feature("#FFFFC64D#J#FFFFD375#J#FFFFE1A1#S #FFFFF8EB#Translator", "parent", 0)
 local translator = menu.add_feature("Translator", "toggle", main_menu.id, function(feat)
     if feat.on then
         addtext("Enabled Translator",v2(1-0.03, (0.0550*5)-0.59))

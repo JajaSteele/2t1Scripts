@@ -125,8 +125,8 @@ local function get_ground(pos)
     return 50
 end
 
-local main_menu = menu.add_feature("JJS Taxi", "parent", 0)
-local player_menu = menu.add_player_feature("JJS Taxi", "parent", 0)
+local main_menu = menu.add_feature("#FFFFC64D#J#FFFFD375#J#FFFFE1A1#S #FFFFF8EB#Taxi", "parent", 0)
+local player_menu = menu.add_player_feature("#FFFFC64D#J#FFFFD375#J#FFFFE1A1#S #FFFFF8EB#Taxi", "parent", 0)
 
 local taxi_vehicle = menu.add_feature("Taxi Vehicle = [nightshark]", "action", main_menu.id, function(ft)
     local status = 1
