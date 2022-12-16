@@ -271,7 +271,7 @@ local plane_select = menu.add_feature("Plane Model = [luxor2]","action",main_men
 
     ft.name = "Plane Model = ["..plane_name.."]"
 end)
-plane_select.hint = "Set the model for your plane.\nMight not work well with every plane (GTA's AI at fault lol)"
+plane_select.hint = "Set the model for your plane.\nMight not work well with every plane (GTA's AI at fault lol)\nDO NOT use blimps, they will crash you."
 
 local spawn_plane = menu.add_feature("Spawn Plane","action",main_menu.id,function()
     local dest = airstrips[select_strip.value+1]

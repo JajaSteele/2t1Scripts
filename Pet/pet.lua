@@ -35,9 +35,15 @@ event.add_event_listener("exit", clear_all_noyield)
 local function request_model(_hash)
     if not streaming.has_model_loaded(_hash) then
         streaming.request_model(_hash)
-        while (not streaming.has_model_loaded(_hash)) do
+        local attempts = 50
+        while (not streaming.has_model_loaded(_hash)) and attempts > 0 do
             system.yield(10)
+            attempts = attempts-1
         end
+
+        return streaming.has_model_loaded(_hash)
+    else
+        return streaming.has_model_loaded(_hash)
     end
 end
 
@@ -95,24 +101,24 @@ end
 
 local animals_table = {
     {name="A_C_Westy", short_name="Westy"},
-    {name="A_C_TigerShark", short_name="Tiger Shark"},
-    {name="A_C_Shepherd", short_name="Shepherd"},
+    {name="a_c_sharktiger", short_name="Tiger Shark"},
+    {name="a_c_shepherd", short_name="Shepherd"},
     {name="A_C_Rottweiler", short_name="Rottweiler"},
     {name="A_C_Rat", short_name="Rat"},
     {name="A_C_Rhesus", short_name="Rhesus"},
     {name="A_C_Retriever", short_name="Retriever"},
-    {name="A_C_Rabbit", short_name="Rabbit"},
+    {name="a_c_rabbit_01", short_name="Rabbit"},
+    {name="A_C_Rabbit_02", short_name="Giant Rabbit"},
     {name="A_C_Pug", short_name="Pug"},
     {name="A_C_Poodle", short_name="Poodle"},
     {name="A_C_Pigeon", short_name="Pigeon"},
     {name="A_C_Pig", short_name="Pig"},
-    {name="A_C_Orleans", short_name="Orleans"},
-    {name="A_C_MountainLion", short_name="Mountain Lion"},
+    {name="a_c_mtlion", short_name="Mountain Lion"},
     {name="A_C_KillerWhale", short_name="Killer Whale"},
     {name="A_C_Husky", short_name="Husky"},
     {name="A_C_Humpback", short_name="Humpback"},
     {name="A_C_Hen", short_name="Hen"},
-    {name="A_C_HammerShark", short_name="Hammer Shark"},
+    {name="A_C_SharkHammer", short_name="Hammer Shark"},
     {name="A_C_Fish", short_name="Fish"},
     {name="A_C_Dolphin", short_name="Dolphin"},
     {name="A_C_Deer", short_name="Deer"},
@@ -123,7 +129,7 @@ local animals_table = {
     {name="A_C_Chop", short_name="Chop"},
     {name="A_C_Chimp", short_name="Chimp"},
     {name="A_C_ChickenHawk", short_name="Chicken Hawk"},
-    {name="A_C_Cat", short_name="Cat"},
+    {name="A_C_Cat_0", short_name="Cat"},
     {name="A_C_Boar", short_name="Boar"},
 }
 
@@ -146,7 +152,7 @@ local pet_ped_preset = menu.add_feature("Preset Model","action_value_str",main_m
     selected_pet = animals_table[ft.value+1]
     if selected_pet ~= nil then
         ped_hash = gameplay.get_hash_key(selected_pet.name)
-        menu.notify("Set the pet model to "..selected_pet.name,"Success",nil,0x00FF00)
+        menu.notify("Set the pet model to "..selected_pet.name.." ("..ped_hash..")","Success",nil,0x00FF00)
     else
         menu.notify("Selected pet is invalid!","Error",nil,0x0000FF)
     end
@@ -256,47 +262,51 @@ local spawn_pet = menu.add_feature("Spawn Pet","action", main_menu.id, function(
 
     local player_group = player.get_player_group(local_player)
 
-    request_model(ped_hash)
+    if request_model(ped_hash) then
+        local new_pet = ped.create_ped(0, ped_hash, front_of_pos(player_pos, v3(0,0,player_heading), 1.5), player_heading-180, true, false)
+        native.call(0x9F8AA94D6D97DBF4, new_pet, true)
 
-    local new_pet = ped.create_ped(0, ped_hash, front_of_pos(player_pos, v3(0,0,player_heading), 1.5), player_heading-180, true, false)
-    native.call(0x9F8AA94D6D97DBF4, new_pet, true)
+        native.call(0x1F4ED342ACEFE62D, new_pet, true, false)
+        
+        streaming.set_model_as_no_longer_needed(ped_hash)
 
-    native.call(0x1F4ED342ACEFE62D, new_pet, true, false)
+        pets_ents[#pets_ents+1] = {
+            id=new_pet,
+            faded=false
+        }
 
-    pets_ents[#pets_ents+1] = {
-        id=new_pet,
-        faded=false
-    }
+        local pet_id = #pets_ents
+        local blip_name = "pet_"..pet_id
+        
 
-    local pet_id = #pets_ents
-    local blip_name = "pet_"..pet_id
-    
+        blips[blip_name] = ui.add_blip_for_entity(new_pet)
+        ui.set_blip_sprite(blips[blip_name], 273)
+        ui.set_blip_colour(blips[blip_name], 2)
 
-    blips[blip_name] = ui.add_blip_for_entity(new_pet)
-    ui.set_blip_sprite(blips[blip_name], 273)
-    ui.set_blip_colour(blips[blip_name], 2)
+        native.call(0xF9113A30DE5C6670, "STRING")
+        native.call(0x6C188BE134E074AA, "Pet "..pet_id.." ("..selected_pet.short_name..")")
+        native.call(0xBC38B49BCB83BC9B, blips[blip_name])
 
-    native.call(0xF9113A30DE5C6670, "STRING")
-    native.call(0x6C188BE134E074AA, "Pet "..pet_id.." ("..selected_pet.short_name..")")
-    native.call(0xBC38B49BCB83BC9B, blips[blip_name])
+        native.call(0xA53ED5520C07654A, new_pet, player_ped, false)
 
-    native.call(0xA53ED5520C07654A, new_pet, player_ped, false)
+        --ai.task_follow_to_offset_of_entity(new_pet, player_ped, v3(1,1,0), 5, -1, 20, true)
 
-    --ai.task_follow_to_offset_of_entity(new_pet, player_ped, v3(1,1,0), 5, -1, 20, true)
+        ped.set_ped_as_group_member(new_pet, player_group)
+        ped.set_ped_as_group_leader(player_ped, player_group)
 
-    ped.set_ped_as_group_member(new_pet, player_group)
-    ped.set_ped_as_group_leader(player_ped, player_group)
+        ped.set_group_formation(player_group, follow_type.value)
+        ped.set_group_formation_spacing(player_group, follow_offset.value/2, follow_offset.value/2, 0)
 
-    ped.set_group_formation(player_group, follow_type.value)
-    ped.set_group_formation_spacing(player_group, follow_offset.value/2, follow_offset.value/2, 0)
+        entity.set_entity_as_mission_entity(new_pet,true,false)
 
-    entity.set_entity_as_mission_entity(new_pet,true,false)
+        native.call(0x1913FE4CBF41C463, new_pet, 13, true)
 
-    native.call(0x1913FE4CBF41C463, new_pet, 13, true)
+        entity.set_entity_god_mode(new_pet, pet_godmod.on)
 
-    entity.set_entity_god_mode(new_pet, pet_godmod.on)
-
-    print("New pet n°"..pet_id)
+        print("New pet n°"..pet_id)
+    else
+        menu.notify("Failed to load model!","Error",nil,0x0000FF)
+    end
 end)
 spawn_pet.hint = "Spawn a new pet with the selected model"
 
