@@ -1,0 +1,31 @@
+---
+name: Automatic Releases
+
+on:
+push:
+  branches:
+    - "master"
+
+jobs:
+  pre-release:
+    name: "Latest Release"
+    steps:
+      - name: "Auto Release"
+        run: |
+          echo "Done!"
+        
+      - uses: marvinpinto/action-automatic-releases@v1.2.1
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: "latest"
+          prerelease: false
+          title: "Auto Release"
+          files: |
+            Airline Script/JJS Airline.lua
+            Taxi Script/JJS Taxi.lua
+            Translator/JJS Translator.lua
+            Pet/JJS Pet.lua
+            Avenger utils/JJS Avenger Utils.lua
+            
+
+
