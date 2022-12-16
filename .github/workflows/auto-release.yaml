@@ -5,11 +5,11 @@ on:
   push:
     branches:
       - "master"
-
+      
   workflow_dispatch:
 
 jobs:
-  pre-release:
+  auto-release:
     name: "Latest Release"
     runs-on: "ubuntu-latest"
     steps:
@@ -17,14 +17,18 @@ jobs:
         run: |
           echo "Done!"
         
-      - uses: marvinpinto/action-automatic-releases@v1.2.1
+      - uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
           automatic_release_tag: "latest"
           prerelease: false
           title: "Auto Release"
           files: |
-            README.md
+            "Airline Script/JJS Airline.lua"
+            "Taxi Script/JJS Taxi.lua"
+            "Translator/JJS Translator.lua"
+            "Pet/JJS Pet.lua"
+            "Avenger utils/JJS Avenger Utils.lua"
             
 
 
