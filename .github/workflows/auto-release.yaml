@@ -4,7 +4,7 @@ name: "auto-release"
 on:
   push:
     branches:
-      - "master"
+      - main
       
   workflow_dispatch:
 
@@ -13,18 +13,22 @@ jobs:
     name: "Latest Release"
     runs-on: "ubuntu-latest"
     steps:
-      - name: "Auto Release"
-        run: |
-          echo "Done!"
-        
-      - uses: "marvinpinto/action-automatic-releases@latest"
+      - name: Create release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          automatic_release_tag: "latest"
+          name: Auto Release
+          tag_name: latest
+          draft: false
           prerelease: false
-          title: "Auto Release"
           files: |
-            ./*.lua
-            
+            Airline Script/JJS Airline.lua
+            Taxi Script/JJS Taxi.lua
+            Translator/JJS Translator.lua
+            Pet/JJS Pet.lua
+            Avenger utils/JJS Avenger Utils.lua
+
 
 
