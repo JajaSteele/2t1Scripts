@@ -1,5 +1,5 @@
 ---
-name: Automatic Releases
+name: "Automatic Releases"
 
 on:
   push:
@@ -9,6 +9,7 @@ on:
 jobs:
   pre-release:
     name: "Latest Release"
+    runs-on: "ubuntu-latest"
     steps:
       - name: "Auto Release"
         run: |
