@@ -226,7 +226,7 @@ local airstrips = {
     {
         start1={x=0, y=0, z=0},
         end1={x=0, y=0, z=0},
-        name="Custom Destination"
+        name="Custom Dest"
     }
 }
 
