@@ -24,7 +24,7 @@ jobs:
           prerelease: false
           title: "Auto Release"
           files: |
-            *.lua
+            README.md
             
 
 
