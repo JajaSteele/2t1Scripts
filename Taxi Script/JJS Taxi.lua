@@ -97,8 +97,6 @@ local vehicle_drive = 1076632110
 local vehicle_drive_close = 1076632111
 local vehicle_speed = 23
 
-local is_ramp_truck = false
-
 local blips = {}
 local taxi_driver
 local taxi_veh
@@ -283,7 +281,7 @@ taxi_radio_toggle.hint = "Toggle the radio ON or OFF"
 
 local taxi_allowfront = menu.add_feature("Allow Front Passenger", "toggle", main_menu.id, function(ft)
     if is_taxi_active and ft.on then
-        native.call(0xBE70724027F85BCD, taxi_veh or 0, 1, 0)
+        native.call(0xBE70724027F85BCD, taxi_veh or 0, 1, 1)
     end
 end)
 taxi_allowfront.hint = "Allows the player to enter front passenger seat in a 3+ seats vehicles (not needed for 2 seats vehicles)"
@@ -401,9 +399,6 @@ local taxi_spawn = menu.add_feature("Spawn Taxi", "action", main_menu.id, functi
         end
     end
 
-    if vehicle_hash == gameplay.get_hash_key("mule2") or vehicle_hash == gameplay.get_hash_key("benson") then
-        is_ramp_truck = true
-    end
 
 
     request_model(vehicle_hash)
@@ -440,18 +435,6 @@ local taxi_spawn = menu.add_feature("Spawn Taxi", "action", main_menu.id, functi
         vehicle.set_vehicle_mod(taxi_veh, 16, 4)
         vehicle.set_vehicle_mod(taxi_veh, 12, 2)
         vehicle.set_vehicle_mod(taxi_veh, 18, 1)
-
-        if is_ramp_truck then
-            for i1=1, 12 do
-                vehicle.set_vehicle_extra(taxi_veh, i1, true)
-            end
-
-            if vehicle_hash == gameplay.get_hash_key("mule2") then
-                vehicle.set_vehicle_extra(taxi_veh, 1, false)
-            elseif vehicle_hash == gameplay.get_hash_key("benson") then
-                vehicle.set_vehicle_extra(taxi_veh, 7, false)
-            end
-        end
     end
 
     if seat_count > 2 and not taxi_allowfront.on then
@@ -473,9 +456,6 @@ local taxi_spawn = menu.add_feature("Spawn Taxi", "action", main_menu.id, functi
         print("Taxi vehicle isn't convertible")
     end
 
-    if is_ramp_truck then
-        vehicle.set_vehicle_door_open(taxi_veh, 5, false, false)
-    end
     print(seat_count)
 
     request_model(ped_hash)
@@ -505,10 +485,6 @@ local taxi_spawn = menu.add_feature("Spawn Taxi", "action", main_menu.id, functi
         native.call(0x3B988190C0AA6C0B, taxi_veh, false)
     end
 
-    if is_ramp_truck then
-        native.call(0x93D9BD300D7789E5, taxi_veh, 5, false)
-    end
-
     if is_taxi_active then
         local dest = ui.get_waypoint_coord()
         local ground_level = get_ground(dest)
@@ -523,16 +499,19 @@ local taxi_spawn = menu.add_feature("Spawn Taxi", "action", main_menu.id, functi
         ui.set_blip_colour(blips.destv3_safe, 5)
         ui.set_blip_route(blips.destv3_safe, true)
         ui.set_blip_route_color(blips.destv3_safe, 46)
+    
+
+        request_control(taxi_driver)
+        request_control(taxi_veh)
+
+        request_model(vehicle_hash)
+        ai.task_vehicle_drive_to_coord(taxi_driver, taxi_veh, destv3_safe, 5, 0, vehicle_hash, vehicle_drive, 30, 10)
+        system.yield(250)
+        ai.task_vehicle_drive_to_coord(taxi_driver, taxi_veh, destv3_safe, 5, 0, vehicle_hash, vehicle_drive, 30, 10)
+        streaming.set_model_as_no_longer_needed(vehicle_hash)
+    else
+        destv3_safe = v3(0,0,0)
     end
-
-    request_control(taxi_driver)
-    request_control(taxi_veh)
-
-    request_model(vehicle_hash)
-    ai.task_vehicle_drive_to_coord(taxi_driver, taxi_veh, destv3_safe, 5, 0, vehicle_hash, vehicle_drive, 30, 10)
-    system.yield(250)
-    ai.task_vehicle_drive_to_coord(taxi_driver, taxi_veh, destv3_safe, 5, 0, vehicle_hash, vehicle_drive, 30, 10)
-    streaming.set_model_as_no_longer_needed(vehicle_hash)
 
     last_drive = {
         type="goto",
@@ -594,10 +573,6 @@ local taxi_spawn = menu.add_feature("Spawn Taxi", "action", main_menu.id, functi
 
             menu.notify("Arrived to Destination","Success",nil,0x00FF00)
             print("Taxi Arrived to Destination")
-
-            if is_ramp_truck then
-                vehicle.set_vehicle_door_open(taxi_veh, 5, false, false)
-            end
 
             repeat
                 ai.task_leave_vehicle(taxi_driver, taxi_veh, 64)
@@ -699,10 +674,6 @@ local taxi_spawn_pl = menu.add_player_feature("Spawn Taxi", "action", player_men
         end
     end
 
-    if vehicle_hash == gameplay.get_hash_key("mule2") or vehicle_hash == gameplay.get_hash_key("benson") then
-        is_ramp_truck = true
-    end
-
     request_model(vehicle_hash)
 
     local seat_count = vehicle.get_vehicle_model_number_of_seats(vehicle_hash)
@@ -741,18 +712,6 @@ local taxi_spawn_pl = menu.add_player_feature("Spawn Taxi", "action", player_men
         vehicle.set_vehicle_mod(taxi_veh, 16, 4)
         vehicle.set_vehicle_mod(taxi_veh, 12, 2)
         vehicle.set_vehicle_mod(taxi_veh, 18, 1)
-
-        if is_ramp_truck then
-            for i1=1, 12 do
-                vehicle.set_vehicle_extra(taxi_veh, i1, true)
-            end
-
-            if vehicle_hash == gameplay.get_hash_key("mule2") then
-                vehicle.set_vehicle_extra(taxi_veh, 1, false)
-            elseif vehicle_hash == gameplay.get_hash_key("benson") then
-                vehicle.set_vehicle_extra(taxi_veh, 7, false)
-            end
-        end
     end
 
     if seat_count > 2 then
@@ -772,10 +731,6 @@ local taxi_spawn_pl = menu.add_player_feature("Spawn Taxi", "action", player_men
     else
         is_vehicle_conv = false
         print("Taxi vehicle isn't convertible")
-    end
-
-    if is_ramp_truck then
-        vehicle.set_vehicle_door_open(taxi_veh, 5, false, false)
     end
 
     request_model(ped_hash)
@@ -804,25 +759,20 @@ local taxi_spawn_pl = menu.add_player_feature("Spawn Taxi", "action", player_men
         native.call(0x3B988190C0AA6C0B, taxi_veh, false)
     end
 
-    if is_ramp_truck then
-        native.call(0x93D9BD300D7789E5, taxi_veh, 5, false)
-    end
-
     if is_taxi_active then
         blips.tar_player = ui.add_blip_for_entity(tar_player_ped)
         ui.set_blip_sprite(blips.tar_player, 58)
         ui.set_blip_colour(blips.tar_player, 5)
         ui.set_blip_route(blips.tar_player, true)
         ui.set_blip_route_color(blips.tar_player, 46)
+
+
+        request_control(taxi_driver)
+        request_control(taxi_veh)
+        ai.task_vehicle_follow(taxi_driver, taxi_veh, tar_player_ped, 5, vehicle_drive, 25)
+        system.yield(250)
+        ai.task_vehicle_follow(taxi_driver, taxi_veh, tar_player_ped, 5, vehicle_drive, 25)
     end
-
-    
-
-    request_control(taxi_driver)
-    request_control(taxi_veh)
-    ai.task_vehicle_follow(taxi_driver, taxi_veh, tar_player_ped, 5, vehicle_drive, 25)
-    system.yield(250)
-    ai.task_vehicle_follow(taxi_driver, taxi_veh, tar_player_ped, 5, vehicle_drive, 25)
 
     last_drive = {
         type="follow",
@@ -880,10 +830,6 @@ local taxi_spawn_pl = menu.add_player_feature("Spawn Taxi", "action", player_men
 
             menu.notify("Arrived to Destination","Success",nil,0x00FF00)
             print("Taxi Arrived to Destination")
-
-            if is_ramp_truck then
-                vehicle.set_vehicle_door_open(taxi_veh, 5, false, false)
-            end
 
             repeat
                 ai.task_leave_vehicle(taxi_driver, taxi_veh, 64)
@@ -1012,6 +958,14 @@ if false then --ENABLES DEBUG FUNCTIONS
             menu.notify("Yes, vehicle is convertible","NATIVE Ye")
         else
             menu.notify("Nope, vehicle isn't convertible","NATIVE No")
+        end
+    end)
+
+    local taxi_debug4 = menu.add_feature("Get Locked", "action", main_menu.id, function(ft)
+        for i1=1, 6 do
+            local door = i1-1
+            print("Door: "..door.." Status: "..native.call(0xCA4AC3EAAE46EC7B, taxi_veh, door):__tointeger())
+            system.yield(0)
         end
     end)
 end
