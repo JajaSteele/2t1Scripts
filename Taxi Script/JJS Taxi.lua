@@ -39,6 +39,24 @@ local function ent_check(ent,dead)
         end
     end
 end
+
+local function GET_STREET_NAME_FROM_HASH_KEY(hash)
+    return native.call(0xD0EF8A959B8A4CB9, hash):__tostring(true)
+end
+
+local function GET_STREET_NAME_AT_COORD(x, y, z)
+    local streetInfo = {name = "", crossingRoad = ""}
+
+    local bufferN = native.ByteBuffer8()
+    local bufferC = native.ByteBuffer8()
+
+    native.call(0x2EB41072B4C1E4C0, x, y, z, bufferN, bufferC)
+
+    streetInfo.name = GET_STREET_NAME_FROM_HASH_KEY(bufferN:__tointeger())
+    streetInfo.crossingRoad = GET_STREET_NAME_FROM_HASH_KEY(bufferC:__tointeger())
+
+    return streetInfo
+end
     
 
 local function table_random(table1)
@@ -95,7 +113,16 @@ local vehicle_name = "nightshark"
 local ped_hash = 988062523
 local vehicle_drive = 1076632110
 local vehicle_drive_close = 1076632111
+local exit_lsia_drive = 1093409295
+local exit_lsia_drive_path = 1076632127
 local vehicle_speed = 23
+
+local lsia_exit = {
+    {x=-1123.1683349609, y=-3069.9182128906, z=13.944445610046, mode=exit_lsia_drive_path, speed=23},
+    {x=-1049.4349365234, y=-2952.9375, z=13.96454334259, mode=exit_lsia_drive, speed=15},
+    {x=-961.80718994141, y=-2805.4265136719, z=13.964538574219, mode=exit_lsia_drive, speed=15},
+    {x=-905.31848144531, y=-2680.9377441406, z=13.796699523926, mode=exit_lsia_drive, speed=15},
+}
 
 local blips = {}
 local taxi_driver
@@ -505,6 +532,35 @@ local taxi_spawn = menu.add_feature("Spawn Taxi", "action", main_menu.id, functi
         request_control(taxi_veh)
 
         request_model(vehicle_hash)
+
+        local taxi_pos1 = entity.get_entity_coords(taxi_veh)
+
+        if GET_STREET_NAME_AT_COORD(taxi_pos1.x, taxi_pos1.y, taxi_pos1.z).name == "Runway1" then
+            menu.notify("Detected inside LSIA, exiting first.","LSIA Bullshit Pathing",nil,0x00AAFF)
+            --native.call(0x195AEEB13CEFE2EE, taxi_driver, taxi_veh, lsia_exit.x, lsia_exit.y, lsia_exit.z, 30, 156, 5.0)
+            for k,v in ipairs(lsia_exit) do
+                if is_taxi_active then
+                    menu.notify("Exiting LSIA Phase "..k.."/"..#lsia_exit,"LSIA Bullshit Pathing",nil,0x00AAFF)
+
+                    ai.task_vehicle_drive_to_coord(taxi_driver, taxi_veh, v3(v.x, v.y, v.z), v.speed, 0, vehicle_hash, v.mode, 5, 10)
+                    repeat
+                        local postaxi = entity.get_entity_coords(taxi_veh)
+                
+                        local dist_x = math.abs(postaxi.x - v.x)
+                        local dist_y = math.abs(postaxi.y - v.y)
+                        local dist_z = math.abs(postaxi.z - v.z)
+                
+                        local hori_dist = dist_x+dist_y
+                        system.yield(0)
+                    until hori_dist < 20 or not is_taxi_active
+                    system.yield(500)
+                end
+            end
+            if is_taxi_active then
+                menu.notify("Finally out of this mess.. Driving to destination now.","LSIA Bullshit Pathing",nil,0x00FF00)
+            end
+        end
+
         ai.task_vehicle_drive_to_coord(taxi_driver, taxi_veh, destv3_safe, 5, 0, vehicle_hash, vehicle_drive, 30, 10)
         system.yield(250)
         ai.task_vehicle_drive_to_coord(taxi_driver, taxi_veh, destv3_safe, 5, 0, vehicle_hash, vehicle_drive, 30, 10)
@@ -910,7 +966,7 @@ local taxi_clear = menu.add_feature("Clean All", "action", main_menu.id, functio
 end)
 taxi_clear.hint = "Will try to clear all of the taxi script's stuff (vehicle,driver,blips)"
 
-if false then --ENABLES DEBUG FUNCTIONS
+if true then --ENABLES DEBUG FUNCTIONS
     local taxi_debug = menu.add_feature("debug wp", "action", main_menu.id, function()
         local dest = ui.get_waypoint_coord()
 
@@ -971,6 +1027,50 @@ if false then --ENABLES DEBUG FUNCTIONS
             print("Door: "..door.." Status: "..native.call(0xCA4AC3EAAE46EC7B, taxi_veh, door):__tointeger())
             system.yield(0)
         end
+    end)
+
+    local street_debug_thread
+
+    local taxi_debug5 = menu.add_feature("Debug Street Info","toggle",main_menu.id, function(ft)
+        if ft.on then
+            street_debug_thread = menu.create_thread(function()
+                local function GET_STREET_NAME_FROM_HASH_KEY(hash)
+                    return native.call(0xD0EF8A959B8A4CB9, hash):__tostring(true)
+                end
+                
+                local function GET_STREET_NAME_AT_COORD(x, y, z)
+                    local streetInfo = {name = "", crossingRoad = ""}
+                
+                    local bufferN = native.ByteBuffer8()
+                    local bufferC = native.ByteBuffer8()
+                
+                    native.call(0x2EB41072B4C1E4C0, x, y, z, bufferN, bufferC)
+                
+                    streetInfo.name = GET_STREET_NAME_FROM_HASH_KEY(bufferN:__tointeger())
+                    streetInfo.crossingRoad = GET_STREET_NAME_FROM_HASH_KEY(bufferC:__tointeger())
+                
+                    return streetInfo
+                end
+                while true do
+                    local local_player = player.player_id()
+                    local player_pos = player.get_player_coords(local_player)
+
+                    local street_info = GET_STREET_NAME_AT_COORD(player_pos.x, player_pos.y, player_pos.z)
+                    scriptdraw.draw_text(street_info.name, v2(0.2, 0.2), v2(0.2, 0.2), 0.8, 0xDD333333, (1<<4), nil)
+                    scriptdraw.draw_text(street_info.name, v2(0.2, 0.2), v2(0.2, 0.2), 0.8, 0xFFFFFFFF, (1<<4), nil) --White text
+                    system.yield(0)
+                end
+            end)
+        else
+            menu.delete_thread(street_debug_thread)
+        end
+    end)
+
+    local get_pl = menu.add_feature("Print PL pos","action",main_menu.id,function()
+        local local_player = player.player_id()
+        local pl_pos = player.get_player_coords(local_player)
+        menu.notify("X: "..pl_pos.x.." Y: "..pl_pos.y.." Z: "..pl_pos.z,"Coords",nil,0x00FF00)
+        utils.to_clipboard("x="..pl_pos.x..", y="..pl_pos.y..", z="..pl_pos.z)
     end)
 end
 
