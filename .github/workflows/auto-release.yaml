@@ -15,18 +15,15 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Empty Release
-        id: empty_release
-        uses: softprops/action-gh-release@v1
+      - name: Delete tag and release
+        id: delete_release
+        uses: dev-drprasad/delete-tag-and-release@v0.2.0
+        with:
+          tag_name: latest
+          delete_release: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          name: "Auto Release"
-          tag_name: latest
-          draft: false
-          prerelease: false
-          files: |
-            ""
+
       
       - name: Create release
         id: create_release
