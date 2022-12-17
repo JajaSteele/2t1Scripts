@@ -827,6 +827,37 @@ local taxi_spawn_pl = menu.add_player_feature("Spawn Taxi", "action", player_men
 
         request_control(taxi_driver)
         request_control(taxi_veh)
+
+        local taxi_pos1 = entity.get_entity_coords(taxi_veh)
+
+        if GET_STREET_NAME_AT_COORD(taxi_pos1.x, taxi_pos1.y, taxi_pos1.z).name == "Runway1" then
+            request_model(vehicle_hash)
+            menu.notify("Detected inside LSIA, exiting first.","LSIA Bullshit Pathing",nil,0x00AAFF)
+            --native.call(0x195AEEB13CEFE2EE, taxi_driver, taxi_veh, lsia_exit.x, lsia_exit.y, lsia_exit.z, 30, 156, 5.0)
+            for k,v in ipairs(lsia_exit) do
+                if is_taxi_active then
+                    menu.notify("Exiting LSIA Phase "..k.."/"..#lsia_exit,"LSIA Bullshit Pathing",nil,0x00AAFF)
+
+                    ai.task_vehicle_drive_to_coord(taxi_driver, taxi_veh, v3(v.x, v.y, v.z), v.speed, 0, vehicle_hash, v.mode, 5, 10)
+                    repeat
+                        local postaxi = entity.get_entity_coords(taxi_veh)
+                
+                        local dist_x = math.abs(postaxi.x - v.x)
+                        local dist_y = math.abs(postaxi.y - v.y)
+                        local dist_z = math.abs(postaxi.z - v.z)
+                
+                        local hori_dist = dist_x+dist_y
+                        system.yield(0)
+                    until hori_dist < 20 or not is_taxi_active
+                    system.yield(500)
+                end
+            end
+            if is_taxi_active then
+                menu.notify("Finally out of this mess.. Driving to destination now.","LSIA Bullshit Pathing",nil,0x00FF00)
+            end
+            streaming.set_model_as_no_longer_needed(vehicle_hash)
+        end
+
         ai.task_vehicle_follow(taxi_driver, taxi_veh, tar_player_ped, 5, vehicle_drive, 25)
         system.yield(250)
         ai.task_vehicle_follow(taxi_driver, taxi_veh, tar_player_ped, 5, vehicle_drive, 25)
