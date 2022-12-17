@@ -235,6 +235,39 @@ for k,v in ipairs(airstrips) do
     select_data[#select_data+1] = v.name
 end
 
+local radio_stations = {
+    {id="RADIO_11_TALK_02", name="Blaine County Radio"},
+    {id="RADIO_12_REGGAE", name="The Blue Ark"},
+    {id="RADIO_13_JAZZ", name="Worldwide FM"},
+    {id="RADIO_14_DANCE_02", name="FlyLo FM"},
+    {id="RADIO_15_MOTOWN", name="The Lowdown 9.11"},
+    {id="RADIO_20_THELAB", name="The Lab"},
+    {id="RADIO_16_SILVERLAKE", name="Radio Mirror Park"},
+    {id="RADIO_17_FUNK", name="Space 103.2"},
+    {id="RADIO_18_90S_ROCK", name="Vinewood Boulevard Radio"},
+    {id="RADIO_21_DLC_XM17", name="Blonded LS 97.8 FM"},
+    {id="RADIO_22_DLC_BATTLE_MIX1_RADIO", name="LS Underground Radio"},
+    {id="RADIO_23_DLC_XM19_RADIO", name="iFruit Radio"},
+    {id="RADIO_19_USER", name="Self Radio"},
+    {id="RADIO_01_CLASS_ROCK", name="LS Rock Radio"},
+    {id="RADIO_02_POP", name="Non-Stop-Pop FM"},
+    {id="RADIO_03_HIPHOP_NEW", name="Radio LS"},
+    {id="RADIO_04_PUNK", name="Channel X"},
+    {id="RADIO_05_TALK_01", name="West Coast Talk"},
+    {id="RADIO_06_COUNTRY", name="Rebel Radio"},
+    {id="RADIO_07_DANCE_01", name="Soulwax FM"},
+    {id="RADIO_08_MEXICAN", name="East Los FM"},
+    {id="RADIO_09_HIPHOP_OLD", name="West Coast Classics"},
+    {id="RADIO_36_AUDIOPLAYER", name="Media Player"},
+    {id="RADIO_35_DLC_HEI4_MLR", name="The Music Locker"},
+    {id="RADIO_34_DLC_HEI4_KULT", name="Kult FM"},
+    {id="RADIO_27_DLC_PRHEI4", name="Still Slipping LS"},
+}
+
+local radio_data = {}
+for k,v in ipairs(radio_stations) do
+    radio_data[#radio_data+1] = v.name
+end
 
 local main_menu = menu.add_feature("#FFFFC64D#J#FFFFD375#J#FFFFE1A1#S #FFFFF8EB#Airline", "parent", 0)
 
@@ -286,6 +319,24 @@ local custom_dest_end = menu.add_feature("Save End","action",custom_dest_menu.id
     menu.notify("Set the custom dest's start to:\nX: "..wp3.x.." Y: "..wp3.y.." Z: "..wp3.z, "Custom Dest", nil, 0x00FF00)
 end)
 custom_dest_end.hint = "Saves the waypoint's position as the custom runway's end"
+
+local radio_menu = menu.add_feature("Radio","parent",main_menu.id)
+
+local plane_radio = menu.add_feature("Station","action_value_str",radio_menu.id,function(ft)
+    if is_plane_active and entity.is_an_entity(plane_veh or 0) then
+        native.call(0x1B9C0099CB942AC6, plane_veh, radio_stations[ft.value+1].id)
+        menu.notify("Set radio to "..radio_stations[ft.value+1].name.."("..radio_stations[ft.value+1].id..")","Radio",nil,0xFF00FF)
+    end
+end)
+plane_radio.hint = "Choose the radio station to use!\nYou must 'Select' the radio after choosing the one you want."
+plane_radio:set_str_data(radio_data)
+
+local plane_radio_toggle = menu.add_feature("Enable","toggle",radio_menu.id,function(ft)
+    if is_plane_active and entity.is_an_entity(plane_veh or 0) then
+        native.call(0x3B988190C0AA6C0B, plane_veh, ft.on)
+    end
+end)
+plane_radio_toggle.hint = "Toggle the radio ON or OFF"
 
 local trans_vehicle = menu.add_feature("Transport Vehicle = [sanchez2]","action",main_menu.id,function(ft)
     local status = 1
@@ -417,6 +468,13 @@ local spawn_plane = menu.add_feature("Spawn Plane","action",main_menu.id,functio
         system.yield(0)
     until ped.is_ped_in_vehicle(plane_ped, plane_veh) and ped.is_ped_in_vehicle(player_ped, plane_veh) or not is_plane_active
     vehicle.set_vehicle_engine_on(plane_veh, true, false, true)
+
+    if plane_radio_toggle.on then
+        native.call(0x3B988190C0AA6C0B, plane_veh, true)
+        native.call(0x1B9C0099CB942AC6, plane_veh, radio_stations[plane_radio.value+1].id)
+    else
+        native.call(0x3B988190C0AA6C0B, plane_veh, false)
+    end
 
     local plane_pos = entity.get_entity_coords(plane_veh)
     local plane_heading = entity.get_entity_rotation(plane_veh)
