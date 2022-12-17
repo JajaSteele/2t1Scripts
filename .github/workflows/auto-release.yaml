@@ -14,6 +14,19 @@ jobs:
     runs-on: "ubuntu-latest"
     steps:
       - uses: actions/checkout@v3
+
+      - name: Empty Release
+        id: empty_release
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          name: "Auto Release"
+          tag_name: latest
+          draft: false
+          prerelease: false
+          files: |
+            ""
       
       - name: Create release
         id: create_release
