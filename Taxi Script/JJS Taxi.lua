@@ -997,7 +997,7 @@ local taxi_clear = menu.add_feature("Clean All", "action", main_menu.id, functio
 end)
 taxi_clear.hint = "Will try to clear all of the taxi script's stuff (vehicle,driver,blips)"
 
-if true then --ENABLES DEBUG FUNCTIONS
+if false then --ENABLES DEBUG FUNCTIONS
     local taxi_debug = menu.add_feature("debug wp", "action", main_menu.id, function()
         local dest = ui.get_waypoint_coord()
 
