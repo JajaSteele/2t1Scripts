@@ -610,6 +610,8 @@ local taxi_spawn = menu.add_feature("Spawn Taxi", "action", main_menu.id, functi
             native.call(0x684785568EF26A22, taxi_veh, false)
             native.call(0xE4E2FD323574965C, taxi_veh, false)
 
+            native.call(0x3B988190C0AA6C0B, taxi_veh, true)
+
             system.yield(3000)
 
             if not taxi_per_veh.on then
@@ -866,6 +868,8 @@ local taxi_spawn_pl = menu.add_player_feature("Spawn Taxi", "action", player_men
 
             native.call(0x684785568EF26A22, taxi_veh, false)
             native.call(0xE4E2FD323574965C, taxi_veh, false)
+
+            native.call(0x3B988190C0AA6C0B, taxi_veh, true)
 
             system.yield(3000)
 
