@@ -347,7 +347,7 @@ local spawn_heli = menu.add_feature("Spawn Heli", "action", main_menu.id, functi
 
     repeat
         system.yield(0)
-    until ped.is_ped_in_vehicle(player_ped, heli_veh)
+    until ped.is_ped_in_vehicle(player_ped, heli_veh) or not is_heli_active
 
     system.yield(2000)
 
