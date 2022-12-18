@@ -341,7 +341,9 @@ local spawn_heli = menu.add_feature("Spawn Heli", "action", main_menu.id, functi
     native.call(0x1F4ED342ACEFE62D, heli_ped, true, true)
     native.call(0x1F4ED342ACEFE62D, heli_veh, true, true)
 
-    native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, spawn_pos.x, spawn_pos.y, spawn_pos.z, 4, 50, -1, -1, 10, 10, 5.0, 32)
+    request_control(heli_veh)
+    request_control(heli_ped)
+    native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, spawn_pos.x, spawn_pos.y, spawn_pos.z, 4, 50.0, 20.0, -1, 10, 10, 100.0, 32)
 
     print("Heli ID: "..heli_veh)
     utils.to_clipboard(heli_veh)
@@ -350,6 +352,8 @@ local spawn_heli = menu.add_feature("Spawn Heli", "action", main_menu.id, functi
         system.yield(0)
         if native.call(0x634148744F385576, heli_veh):__tointeger() == 1 then
             local curr_vel = entity.get_entity_velocity(heli_veh)
+            request_control(heli_veh)
+            request_control(heli_ped)
             entity.set_entity_velocity(heli_veh, v3(curr_vel.x, curr_vel.y, -0.75))
         end
     until native.call(0x1DD55701034110E5, heli_veh):__tonumber() < 10 or not is_heli_active
@@ -381,7 +385,7 @@ local spawn_heli = menu.add_feature("Spawn Heli", "action", main_menu.id, functi
     request_control(heli_veh)
     request_control(heli_ped)
     native.call(0xE1EF3C1216AFF2CD, heli_ped)
-    native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z, 4, vehicle_speed, 50.0, -1, 300, 100, 200.0, 0)
+    native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z, 4, vehicle_speed, 50.0, -1, 100, 30, 200.0, 0)
 
     while true do
         local heli_pos_live = entity.get_entity_coords(heli_veh)
@@ -433,15 +437,21 @@ local spawn_heli = menu.add_feature("Spawn Heli", "action", main_menu.id, functi
             system.yield(0)
             if native.call(0x634148744F385576, heli_veh):__tointeger() == 1 then
                 local curr_vel = entity.get_entity_velocity(heli_veh)
+                request_control(heli_veh)
+                request_control(heli_ped)
                 entity.set_entity_velocity(heli_veh, v3(curr_vel.x, curr_vel.y, -0.75))
             end
         until native.call(0x1DD55701034110E5, heli_veh):__tonumber() < 10 or not is_heli_active
     else
         notify("Hovering above dest","Hovering",nil,0x00AAFF)
         if heli_rappeldown.on and is_heli_active then
+            request_control(heli_veh)
+            request_control(heli_ped)
             native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z, 4, 70.0, 10.0, -1, 100, 5, 75.0, 0)
             native.call(0x09693B0312F91649, player_ped, 95)
         else
+            request_control(heli_veh)
+            request_control(heli_ped)
             native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z+30, 4, 20.0, 10.0, -1, 100, 5, 75.0, 0)
         end
     end
