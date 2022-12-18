@@ -345,12 +345,14 @@ local trans_vehicle = menu.add_feature("Transport Vehicle = [sanchez2]","action"
     end
     trans_veh_hash = gameplay.get_hash_key(trans_veh_name)
 
-    if not streaming.is_model_a_vehicle(trans_veh_hash) then
+    if not streaming.is_model_a_vehicle(trans_veh_hash or 0) then
         trans_veh_hash = tonumber(trans_veh_name)
     end
 
-    if not streaming.is_model_a_vehicle(trans_veh_hash) then
+    if not streaming.is_model_a_vehicle(trans_veh_hash or 0) then
         menu.notify("Warning! Vehicle model doesn't exist!","!WARNING!",nil,0x0000FF)
+        ft.name = "Transport Vehicle = [#FF0000FF#ERROR#DEFAULT#]"
+        return
     end
 
     ft.name = "Transport Vehicle = ["..trans_veh_name.."]"
