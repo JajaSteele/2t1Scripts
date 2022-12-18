@@ -235,6 +235,10 @@ local heli_hoveratdest = menu.add_feature("Keep Hovering", "toggle", main_menu.i
 end)
 heli_hoveratdest.hint = "If enabled the heli won't land, and instead will hover above the destination."
 
+local heli_rappeldown = menu.add_feature("Rappel at Dest", "toggle", main_menu.id, function(ft)
+end)
+heli_rappeldown.hint = "If enabled, the script user #FF0000FF#(NOT other players)#DEFAULT# will rappel down.\n#FF0000FF#You NEED the 'Keep Hovering' option to be enabled too!"
+
 local heli_speed = menu.add_feature("Speed = [90]", "action", main_menu.id, function(ft)
     local status = 1
     local temp_speed
@@ -285,13 +289,14 @@ local spawn_heli = menu.add_feature("Spawn Heli", "action", main_menu.id, functi
 
     request_model(vehicle_hash)
     heli_veh = vehicle.create_vehicle(vehicle_hash, spawn_pos, player_heading, true, false)
+
     vehicle.set_heli_blades_full_speed(heli_veh)
     native.call(0x2311DD7159F00582, heli_veh, true)
     native.call(0xDBC631F109350B8C, heli_veh, true)
 
     vehicle.set_vehicle_mod_kit_type(heli_veh, 0)
-    vehicle.set_vehicle_colors(heli_veh, 107, 99)
-    vehicle.set_vehicle_extra_colors(heli_veh, 36, 0)
+    vehicle.set_vehicle_colors(heli_veh, 12, 141)
+    vehicle.set_vehicle_extra_colors(heli_veh, 62, 0)
     vehicle.set_vehicle_window_tint(heli_veh, 1)
 
     if heli_radio_toggle.on then
@@ -427,7 +432,12 @@ local spawn_heli = menu.add_feature("Spawn Heli", "action", main_menu.id, functi
         until native.call(0x1DD55701034110E5, heli_veh):__tonumber() < 10 or not is_heli_active
     else
         menu.notify("Hovering above dest","Hovering",nil,0x00AAFF)
-        native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z, 4, 20.0, 10.0, -1, 100, 5, 75.0, 0)
+        if heli_rappeldown.on then
+            native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z, 4, 70.0, 10.0, -1, 100, 5, 75.0, 0)
+            native.call(0x09693B0312F91649, player_ped, 95)
+        else
+            native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z+30, 4, 20.0, 10.0, -1, 100, 5, 75.0, 0)
+        end
     end
 
     system.yield(1000)
@@ -437,6 +447,12 @@ local spawn_heli = menu.add_feature("Spawn Heli", "action", main_menu.id, functi
     repeat
         system.yield(0)
     until get_taken_seats(heli_veh) <= 1 or not is_heli_active
+
+    if heli_rappeldown.on then
+        repeat
+            system.yield(0)
+        until native.call(0x291E373D483E7EE7, heli_veh):__tointeger() == 0 or not is_heli_active
+    end
 
     system.yield(3000)
 
