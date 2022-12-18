@@ -303,7 +303,6 @@ local custom_dest_end = menu.add_feature("Save End","action",custom_dest_menu.id
     local wp = ui.get_waypoint_coord()
     local wpz = get_ground(wp)
 
-    print(wpz)
     if wpz < get_water(wp) then
         wpz = get_water(wp)
     end
@@ -676,9 +675,9 @@ clean_plane.hint = "Clean up plane + pilot"
 local status_thread = menu.create_thread(function()
     while true do
         if is_plane_active then
-            plane_status.name = ("Status: Active")
+            plane_status.name = ("Status: #FF00FF00#Active")
         else
-            plane_status.name = ("Status: Inactive")
+            plane_status.name = ("Status: #FF0000FF#Inactive")
         end
         system.yield(500)
     end

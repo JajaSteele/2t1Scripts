@@ -984,9 +984,9 @@ taxi_status.hint = "The current status of the taxi script"
 local status_thread = menu.create_thread(function()
     while true do
         if is_taxi_active then
-            taxi_status.name = ("Status: Active")
+            taxi_status.name = ("Status: #FF00FF00#Active")
         else
-            taxi_status.name = ("Status: Inactive")
+            taxi_status.name = ("Status: #FF0000FF#Inactive")
         end
         system.yield(500)
     end

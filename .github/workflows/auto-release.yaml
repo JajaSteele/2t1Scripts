@@ -41,6 +41,7 @@ jobs:
             ./Translator/JJS Translator.lua
             ./Pet/JJS Pet.lua
             ./Avenger utils/JJS Avenger Utils.lua
+            ./Airtaxi Script/JJS Airtaxi.lua
 
 
 
