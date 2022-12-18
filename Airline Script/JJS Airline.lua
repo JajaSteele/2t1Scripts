@@ -384,12 +384,14 @@ local plane_select = menu.add_feature("Plane Model = [luxor2]","action",main_men
     end
     plane_hash = gameplay.get_hash_key(plane_name)
 
-    if not streaming.is_model_a_vehicle(plane_hash) then
+    if not streaming.is_model_a_vehicle(plane_hash or 0) then
         plane_hash = tonumber(plane_name)
     end
 
-    if not streaming.is_model_a_vehicle(plane_hash) then
+    if not streaming.is_model_a_vehicle(plane_hash or 0) then
         menu.notify("Warning! Vehicle model doesn't exist!","!WARNING!",nil,0x0000FF)
+        ft.name = "Plane Model = [#FF0000FF#ERROR#DEFAULT#]"
+        return
     end
 
     ft.name = "Plane Model = ["..plane_name.."]"

@@ -163,12 +163,14 @@ local taxi_vehicle = menu.add_feature("Taxi Vehicle = [nightshark]", "action", m
     end
     vehicle_hash = gameplay.get_hash_key(vehicle_name)
 
-    if not streaming.is_model_a_vehicle(vehicle_hash) then
+    if not streaming.is_model_a_vehicle(vehicle_hash or 0) then
         vehicle_hash = tonumber(vehicle_name)
     end
 
-    if not streaming.is_model_a_vehicle(vehicle_hash) then
+    if not streaming.is_model_a_vehicle(vehicle_hash or 0) then
         menu.notify("Warning! Vehicle model doesn't exist!","!WARNING!",nil,0x0000FF)
+        ft.name = "Taxi Vehicle = [#FF0000FF#ERROR#DEFAULT#]"
+        return
     end
 
     ft.name = "Taxi Vehicle = ["..vehicle_name.."]"
@@ -190,6 +192,8 @@ local taxi_ped = menu.add_feature("Taxi Ped = [cs_fbisuit_01]", "action", main_m
 
     if not streaming.is_model_a_ped(ped_hash) then
         menu.notify("Warning! Ped model doesn't exist!","!WARNING!",nil,0x0000FF)
+        ft.name = "Taxi Ped = [#FF0000FF#ERROR#DEFAULT#]"
+        return
     end
 
     ft.name = "Taxi Ped = ["..ped_name.."]"

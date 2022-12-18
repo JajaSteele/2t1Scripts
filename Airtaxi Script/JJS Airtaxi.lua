@@ -204,12 +204,14 @@ local heli_select = menu.add_feature("Heli Model = [swift2]","action",main_menu.
     end
     vehicle_hash = gameplay.get_hash_key(vehicle_name)
 
-    if not streaming.is_model_a_vehicle(vehicle_hash) then
+    if not streaming.is_model_a_vehicle(vehicle_hash or 0) then
         vehicle_hash = tonumber(vehicle_name)
     end
 
-    if not streaming.is_model_a_vehicle(vehicle_hash) then
+    if not streaming.is_model_a_vehicle(vehicle_hash or 0) then
         menu.notify("Warning! Vehicle model doesn't exist!","!WARNING!",nil,0x0000FF)
+        ft.name = "Heli Model = [#FF0000FF#ERROR#DEFAULT#]"
+        return
     end
 
     ft.name = "Heli Model = ["..vehicle_name.."]"
