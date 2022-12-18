@@ -121,6 +121,12 @@ local function get_ground(pos)
     return 50
 end
 
+local function notify(text,title,time,color)
+    if is_heli_active then
+        menu.notify(text,title,time,color)
+    end
+end
+
 local function get_water(pos)
 
     native.call(0x7E3F55ED251B76D3, 0)
@@ -348,7 +354,7 @@ local spawn_heli = menu.add_feature("Spawn Heli", "action", main_menu.id, functi
         end
     until native.call(0x1DD55701034110E5, heli_veh):__tonumber() < 10 or not is_heli_active
 
-    menu.notify("Greetings.\nEnter the helicopter to start.","JJS Airtaxi",nil,0xFF00FF)
+    notify("Greetings.\nEnter the helicopter to start.","JJS Airtaxi",nil,0xFF00FF)
 
     repeat
         system.yield(0)
@@ -361,7 +367,7 @@ local spawn_heli = menu.add_feature("Spawn Heli", "action", main_menu.id, functi
 
     local wp3 = v3(wp.x, wp.y, wpz+100)
 
-    menu.notify("Flying to:\nX: "..wp3.x.." Y: "..wp3.y.." Z: "..wp3.z,"Flying to Dest",nil,0x00AAFF)
+    notify("Flying to:\nX: "..wp3.x.." Y: "..wp3.y.." Z: "..wp3.z,"Flying to Dest",nil,0x00AAFF)
 
     blips.dest = ui.add_blip_for_coord(wp3)
     ui.set_blip_sprite(blips.dest, 58)
@@ -415,9 +421,9 @@ local spawn_heli = menu.add_feature("Spawn Heli", "action", main_menu.id, functi
         end
         system.yield(0)
     end
-
+    
     if not heli_hoveratdest.on then
-        menu.notify("Landing at dest..","Landing",nil,0x00AAFF)
+        notify("Landing at dest..","Landing",nil,0x00AAFF)
         request_control(heli_veh)
         request_control(heli_ped)
         native.call(0xE1EF3C1216AFF2CD, heli_ped)
@@ -431,8 +437,8 @@ local spawn_heli = menu.add_feature("Spawn Heli", "action", main_menu.id, functi
             end
         until native.call(0x1DD55701034110E5, heli_veh):__tonumber() < 10 or not is_heli_active
     else
-        menu.notify("Hovering above dest","Hovering",nil,0x00AAFF)
-        if heli_rappeldown.on then
+        notify("Hovering above dest","Hovering",nil,0x00AAFF)
+        if heli_rappeldown.on and is_heli_active then
             native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z, 4, 70.0, 10.0, -1, 100, 5, 75.0, 0)
             native.call(0x09693B0312F91649, player_ped, 95)
         else
@@ -442,7 +448,7 @@ local spawn_heli = menu.add_feature("Spawn Heli", "action", main_menu.id, functi
 
     system.yield(1000)
 
-    menu.notify("Arrived to destination! Please exit shortly.","JJS Airtaxi",nil,0x00FF00)
+    notify("Arrived to destination! Please exit shortly.","JJS Airtaxi",nil,0x00FF00)
 
     repeat
         system.yield(0)
@@ -462,7 +468,7 @@ local spawn_heli = menu.add_feature("Spawn Heli", "action", main_menu.id, functi
     system.yield(2000)
 
     clear_all(nil,true,true)
-    menu.notify("Thanks you for using JJS-Airtaxi!","Thanks You",nil,0xc203fc)
+    notify("Thanks you for using JJS-Airtaxi!","Thanks You",nil,0xc203fc)
     is_heli_active = false
 end)
 
