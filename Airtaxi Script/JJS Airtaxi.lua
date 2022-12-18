@@ -231,6 +231,10 @@ local heli_allowfront = menu.add_feature("Allow Front Passenger", "toggle", main
 end)
 heli_allowfront.hint = "Allows the player to enter front passenger seat"
 
+local heli_hoveratdest = menu.add_feature("Keep Hovering", "toggle", main_menu.id, function(ft)
+end)
+heli_hoveratdest.hint = "If enabled the heli won't land, and instead will hover above the destination."
+
 local heli_speed = menu.add_feature("Speed = [90]", "action", main_menu.id, function(ft)
     local status = 1
     local temp_speed
@@ -337,7 +341,7 @@ local spawn_heli = menu.add_feature("Spawn Heli", "action", main_menu.id, functi
             local curr_vel = entity.get_entity_velocity(heli_veh)
             entity.set_entity_velocity(heli_veh, v3(curr_vel.x, curr_vel.y, -0.75))
         end
-    until native.call(0x1DD55701034110E5, heli_veh):__tonumber() < 10
+    until native.call(0x1DD55701034110E5, heli_veh):__tonumber() < 10 or not is_heli_active
 
     menu.notify("Greetings.\nEnter the helicopter to start.","JJS Airtaxi",nil,0xFF00FF)
 
@@ -407,18 +411,24 @@ local spawn_heli = menu.add_feature("Spawn Heli", "action", main_menu.id, functi
         system.yield(0)
     end
 
-    request_control(heli_veh)
-    request_control(heli_ped)
-    native.call(0xE1EF3C1216AFF2CD, heli_ped)
-    native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z, 4, 60.0, 10.0, -1, 50, 30, 75.0, 32)
+    if not heli_hoveratdest.on then
+        menu.notify("Landing at dest..","Landing",nil,0x00AAFF)
+        request_control(heli_veh)
+        request_control(heli_ped)
+        native.call(0xE1EF3C1216AFF2CD, heli_ped)
+        native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z, 4, 60.0, 10.0, -1, 50, 30, 75.0, 32)
 
-    repeat
-        system.yield(0)
-        if native.call(0x634148744F385576, heli_veh):__tointeger() == 1 then
-            local curr_vel = entity.get_entity_velocity(heli_veh)
-            entity.set_entity_velocity(heli_veh, v3(curr_vel.x, curr_vel.y, -0.75))
-        end
-    until native.call(0x1DD55701034110E5, heli_veh):__tonumber() < 10
+        repeat
+            system.yield(0)
+            if native.call(0x634148744F385576, heli_veh):__tointeger() == 1 then
+                local curr_vel = entity.get_entity_velocity(heli_veh)
+                entity.set_entity_velocity(heli_veh, v3(curr_vel.x, curr_vel.y, -0.75))
+            end
+        until native.call(0x1DD55701034110E5, heli_veh):__tonumber() < 10 or not is_heli_active
+    else
+        menu.notify("Hovering above dest","Hovering",nil,0x00AAFF)
+        native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z, 4, 20.0, 10.0, -1, 100, 5, 75.0, 0)
+    end
 
     system.yield(1000)
 
@@ -426,7 +436,7 @@ local spawn_heli = menu.add_feature("Spawn Heli", "action", main_menu.id, functi
 
     repeat
         system.yield(0)
-    until get_taken_seats(heli_veh) <= 1
+    until get_taken_seats(heli_veh) <= 1 or not is_heli_active
 
     system.yield(3000)
 
