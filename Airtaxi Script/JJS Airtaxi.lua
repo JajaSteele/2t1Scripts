@@ -335,7 +335,7 @@ local spawn_heli = menu.add_feature("Spawn Heli", "action", main_menu.id, functi
             local curr_vel = entity.get_entity_velocity(heli_veh)
             entity.set_entity_velocity(heli_veh, v3(curr_vel.x, curr_vel.y, -0.75))
         end
-    until native.call(0x1DD55701034110E5, heli_veh):__tonumber() < 2
+    until native.call(0x1DD55701034110E5, heli_veh):__tonumber() < 10
 
     menu.notify("Greetings.\nEnter the helicopter to start.","JJS Airtaxi",nil,0xFF00FF)
 
@@ -387,7 +387,28 @@ local spawn_heli = menu.add_feature("Spawn Heli", "action", main_menu.id, functi
     request_control(heli_veh)
     request_control(heli_ped)
     native.call(0xE1EF3C1216AFF2CD, heli_ped)
-    native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z, 4, 20.0, 10.0, -1, 50, 30, 75.0, 32)
+    native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z, 4, 20.0, 10.0, -1, 50, 30, 75.0, 0)
+
+    while true do
+        local heli_pos_live = entity.get_entity_coords(heli_veh)
+
+        local dist_x = math.abs(heli_pos_live.x - wp3.x)
+        local dist_y = math.abs(heli_pos_live.y - wp3.y)
+        local dist_z = math.abs(heli_pos_live.z - wp3.z)
+
+        local hori_dist = dist_x+dist_y
+
+        if hori_dist < 15 or not is_heli_active then
+            print("Landing")
+            break
+        end
+        system.yield(0)
+    end
+
+    request_control(heli_veh)
+    request_control(heli_ped)
+    native.call(0xE1EF3C1216AFF2CD, heli_ped)
+    native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z, 4, 60.0, 10.0, -1, 50, 30, 75.0, 32)
 
     repeat
         system.yield(0)
@@ -395,11 +416,11 @@ local spawn_heli = menu.add_feature("Spawn Heli", "action", main_menu.id, functi
             local curr_vel = entity.get_entity_velocity(heli_veh)
             entity.set_entity_velocity(heli_veh, v3(curr_vel.x, curr_vel.y, -0.75))
         end
-    until native.call(0x1DD55701034110E5, heli_veh):__tonumber() < 2
+    until native.call(0x1DD55701034110E5, heli_veh):__tonumber() < 10
 
     system.yield(1000)
 
-    menu.notify("Landed at destination! Please exit shortly.","JJS Airtaxi",nil,0x00FF00)
+    menu.notify("Arrived to destination! Please exit shortly.","JJS Airtaxi",nil,0x00FF00)
 
     repeat
         system.yield(0)
