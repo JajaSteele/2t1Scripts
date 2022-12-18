@@ -152,6 +152,19 @@ local function get_ground(pos)
     return 50
 end
 
+local function get_taken_seats(veh)
+    local veh_hash = entity.get_entity_model_hash(veh)
+    local seat_count = vehicle.get_vehicle_model_number_of_seats(veh_hash)
+    local counter = 0
+    for i1=1, seat_count do
+        local ped_in_seat = vehicle.get_ped_in_vehicle_seat(veh, i1-2)
+        if ped_in_seat and ped_in_seat ~= 0 then
+            counter = counter+1
+        end
+    end
+    return counter
+end
+
 local main_menu = menu.add_feature("#FFFFC64D#J#FFFFD375#J#FFFFE1A1#S #FFFFF8EB#Taxi", "parent", 0)
 local player_menu = menu.add_player_feature("#FFFFC64D#J#FFFFD375#J#FFFFE1A1#S #FFFFF8EB#Taxi", "parent", 0)
 
@@ -621,7 +634,8 @@ local taxi_spawn = menu.add_feature("Spawn Taxi", "action", main_menu.id, functi
 
         local hori_dist = dist_x+dist_y
 
-        if hori_dist < 65 then
+
+        if hori_dist < 65 and dist_z < 5 then
 
             native.call(0x684785568EF26A22, taxi_veh, true)
             native.call(0xE4E2FD323574965C, taxi_veh, true)
@@ -654,15 +668,9 @@ local taxi_spawn = menu.add_feature("Spawn Taxi", "action", main_menu.id, functi
             vehicle.start_vehicle_horn(taxi_veh, 1500, 0, false)
 
             if not taxi_per_veh.on then
-                if seat_count > 2 then
-                    repeat
-                        system.yield(0)
-                    until vehicle.get_ped_in_vehicle_seat(taxi_veh, 1) == 0 and vehicle.get_ped_in_vehicle_seat(taxi_veh, 2) == 0 and vehicle.get_ped_in_vehicle_seat(taxi_veh, 3) == 0 and vehicle.get_ped_in_vehicle_seat(taxi_veh, 4) == 0
-                else
-                    repeat
-                        system.yield(0)
-                    until vehicle.get_ped_in_vehicle_seat(taxi_veh, 0) == 0
-                end
+                repeat
+                    system.yield(0)
+                until get_taken_seats(taxi_veh) == 0
             else
                 vehicle.set_vehicle_doors_locked(taxi_veh, 1)
             end
@@ -944,15 +952,9 @@ local taxi_spawn_pl = menu.add_player_feature("Spawn Taxi", "action", player_men
             vehicle.start_vehicle_horn(taxi_veh, 1500, 0, false)
 
             if not taxi_per_veh.on then
-                if seat_count > 2 then
-                    repeat
-                        system.yield(0)
-                    until vehicle.get_ped_in_vehicle_seat(taxi_veh, 1) == 0 and vehicle.get_ped_in_vehicle_seat(taxi_veh, 2) == 0 and vehicle.get_ped_in_vehicle_seat(taxi_veh, 3) == 0 and vehicle.get_ped_in_vehicle_seat(taxi_veh, 4) == 0
-                else
-                    repeat
-                        system.yield(0)
-                    until vehicle.get_ped_in_vehicle_seat(taxi_veh, 0) == 0
-                end
+                repeat
+                    system.yield(0)
+                until get_taken_seats(taxi_veh) == 0
             else
                 vehicle.set_vehicle_doors_locked(taxi_veh, 1)
             end
