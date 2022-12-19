@@ -477,8 +477,8 @@ local spawn_heli = menu.add_feature("Spawn Heli", "action", main_menu.id, functi
 
     system.yield(2000)
 
-    clear_all(nil,true,true)
     notify("Thanks you for using JJS-Airtaxi!","Thanks You",nil,0xc203fc)
+    clear_all(nil,true,true)
     is_heli_active = false
 end)
 
