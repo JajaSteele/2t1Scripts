@@ -33,6 +33,7 @@ local heli_ped
 local heli_veh
 
 local is_heli_active = false
+local heli_rappeldown2 = false
 
 local function clear_all_noyield(delay)
     if delay and type(delay) == "number" then
@@ -194,6 +195,29 @@ local radio_stations = {
     {id="RADIO_27_DLC_PRHEI4", name="Still Slipping LS"},
 }
 
+local rappel_helis = {
+    {name="annihilator"},
+    {name="annihilator2"},
+    {name="maverick"},
+    {name="polmav"},
+    {name="frogger"},
+}
+
+for k,v in pairs(rappel_helis) do
+    rappel_helis[k].id = gameplay.get_hash_key(v.name)
+end
+
+local function can_rappel(name)
+    local name_id = gameplay.get_hash_key(name)
+    for k,v in pairs(rappel_helis) do
+        if name == v.name or name_id == v.id then
+            return true
+        end
+        system.yield(0)
+    end
+    return false
+end
+
 local radio_data = {}
 for k,v in ipairs(radio_stations) do
     radio_data[#radio_data+1] = v.name
@@ -201,6 +225,24 @@ end
 
 
 local main_menu = menu.add_feature("#FFFFC64D#J#FFFFD375#J#FFFFE1A1#S #FFFFF8EB#Airtaxi", "parent", 0)
+
+local heli_hoveratdest = menu.add_feature("Keep Hovering", "toggle", main_menu.id, function(ft)
+    if heli_rappeldown2 then
+        menu.notify("Warning! You need 'Keep Hovering' to be enabled if you want to rappel.","WARN",nil,0x00AAFF)
+    end
+end)
+heli_hoveratdest.hint = "If enabled the heli won't land, and instead will hover above the destination."
+
+local heli_rappeldown = menu.add_feature("Rappel at Dest", "toggle", main_menu.id, function(ft)
+    if not can_rappel(vehicle_name) then
+        menu.notify("Error! The selected helicopter cannot rappel.","ERROR",nil,0x0000FF)
+        ft.on = false
+    end
+    if not heli_hoveratdest.on then
+        heli_hoveratdest.on = true
+    end
+    heli_rappeldown2 = ft.on
+end)
 
 local heli_select = menu.add_feature("Heli Model = [swift2]","action",main_menu.id,function(ft)
     local status = 1
@@ -221,6 +263,10 @@ local heli_select = menu.add_feature("Heli Model = [swift2]","action",main_menu.
     end
 
     ft.name = "Heli Model = ["..vehicle_name.."]"
+    if not can_rappel(vehicle_name) and heli_rappeldown.on then
+        menu.notify("Warning! The selected helicopter cannot rappel.","WARN",nil,0x00AAFF)
+        heli_rappeldown.on = false
+    end
 end)
 heli_select.hint = "Set the model for your airtaxi helicopter.\nMight not work well with every helis (GTA's AI at fault lol)"
 
@@ -237,12 +283,6 @@ local heli_allowfront = menu.add_feature("Allow Front Passenger", "toggle", main
 end)
 heli_allowfront.hint = "Allows the player to enter front passenger seat"
 
-local heli_hoveratdest = menu.add_feature("Keep Hovering", "toggle", main_menu.id, function(ft)
-end)
-heli_hoveratdest.hint = "If enabled the heli won't land, and instead will hover above the destination."
-
-local heli_rappeldown = menu.add_feature("Rappel at Dest", "toggle", main_menu.id, function(ft)
-end)
 heli_rappeldown.hint = "If enabled, the script user #FF0000FF#(NOT other players)#DEFAULT# will rappel down.\n#FF0000FF#You NEED the 'Keep Hovering' option to be enabled too!"
 
 local heli_speed = menu.add_feature("Speed = [90]", "action", main_menu.id, function(ft)
@@ -494,6 +534,7 @@ local status_thread = menu.create_thread(function()
         else
             heli_status.name = ("Status: #FF0000FF#Inactive")
         end
+
         system.yield(500)
     end
 end)
