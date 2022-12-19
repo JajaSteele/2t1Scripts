@@ -465,7 +465,6 @@ local spawn_plane = menu.add_feature("Spawn Plane","action",main_menu.id,functio
     native.call(0x1913FE4CBF41C463, plane_ped, 255, true)
     native.call(0x1913FE4CBF41C463, plane_ped, 251, true)
     native.call(0x1913FE4CBF41C463, plane_ped, 184, true)
-    native.call(0x1913FE4CBF41C463, player_ped, 184, true)
 
     repeat
         system.yield(0)
