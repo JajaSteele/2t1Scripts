@@ -195,6 +195,11 @@ local radio_stations = {
     {id="RADIO_27_DLC_PRHEI4", name="Still Slipping LS"},
 }
 
+local radio_data = {}
+for k,v in ipairs(radio_stations) do
+    radio_data[#radio_data+1] = v.name
+end
+
 local rappel_helis = {
     {name="annihilator"},
     {name="annihilator2"},
@@ -218,13 +223,9 @@ local function can_rappel(name)
     return false
 end
 
-local radio_data = {}
-for k,v in ipairs(radio_stations) do
-    radio_data[#radio_data+1] = v.name
-end
-
 
 local main_menu = menu.add_feature("#FFFFC64D#J#FFFFD375#J#FFFFE1A1#S #FFFFF8EB#Airtaxi", "parent", 0)
+
 
 local heli_hoveratdest = menu.add_feature("Keep Hovering", "toggle", main_menu.id, function(ft)
     if heli_rappeldown2 then
@@ -487,7 +488,7 @@ local spawn_heli = menu.add_feature("Spawn Heli", "action", main_menu.id, functi
         request_control(heli_veh)
         request_control(heli_ped)
         native.call(0xE1EF3C1216AFF2CD, heli_ped)
-        native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z, 4, 60.0, 10.0, -1, 50, 30, 75.0, 32)
+        native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z, 4, 10.0, 50.0, -1, 50, 30, 400.0, 32)
 
         repeat
             system.yield(0)
@@ -503,12 +504,12 @@ local spawn_heli = menu.add_feature("Spawn Heli", "action", main_menu.id, functi
         if heli_rappeldown.on and is_heli_active then
             request_control(heli_veh)
             request_control(heli_ped)
-            native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z, 4, 70.0, 10.0, -1, 100, 5, 75.0, 0)
-            native.call(0x09693B0312F91649, player_ped, 95)
+            native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z-30, 4, 20.0, 50.0, -1, 100, 5, 400.0, 0)
+            native.call(0x09693B0312F91649, player_ped, 75)
         else
             request_control(heli_veh)
             request_control(heli_ped)
-            native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z+30, 4, 20.0, 10.0, -1, 100, 5, 75.0, 0)
+            native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z+30, 4, 20.0, 50.0, -1, 100, 5, 400.0, 0)
         end
     end
 
@@ -520,11 +521,13 @@ local spawn_heli = menu.add_feature("Spawn Heli", "action", main_menu.id, functi
         repeat
             system.yield(0)
         until entity.get_entity_speed(heli_veh) < 1
+        system.yield(500)
+        ai.task_leave_vehicle(heli_ped, heli_veh, 64)
+        vehicle.set_vehicle_engine_on(heli_veh, false, false, true)
         for i1=1, 180 do
             vehicle.set_heli_blades_speed(heli_veh, (180-i1)/180)
             system.yield(0)
         end
-        ai.task_leave_vehicle(heli_ped, heli_veh, 64)
     end
 
     if heli_hoveratdest.on then
