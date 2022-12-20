@@ -334,6 +334,10 @@ local taxi_per_veh = menu.add_feature("Use personal vehicle", "toggle", main_men
 end)
 taxi_per_veh.hint = "Use the player's personal vehicle instead of a new one"
 
+local taxi_ignoreheight = menu.add_feature("Ignore Height", "toggle", main_menu.id, function(ft)
+end)
+taxi_ignoreheight.hint = "When this is enabled, the taxi won't check the height and just the horizontal distance\nUseful for the casino since highest point is roof terrace and not the entry path."
+
 local function clear_all_noyield(delay)
     if delay and type(delay) == "number" then
         system.yield(delay)
@@ -635,7 +639,7 @@ local taxi_spawn = menu.add_feature("Spawn Taxi", "action", main_menu.id, functi
         local hori_dist = dist_x+dist_y
 
 
-        if hori_dist < 65 and dist_z < 5 then
+        if hori_dist < 65 and (dist_z < 5 or taxi_ignoreheight.on) then
 
             native.call(0x684785568EF26A22, taxi_veh, true)
             native.call(0xE4E2FD323574965C, taxi_veh, true)
