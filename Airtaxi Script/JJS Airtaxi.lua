@@ -402,9 +402,19 @@ local spawn_heli = menu.add_feature("Spawn Heli", "action", main_menu.id, functi
 
     repeat
         system.yield(0)
+    until entity.get_entity_speed(heli_veh) < 1
+
+    native.call(0xE1EF3C1216AFF2CD, heli_ped)
+    
+    entity.freeze_entity(heli_veh, true)
+
+    repeat
+        system.yield(0)
     until ped.is_ped_in_vehicle(player_ped, heli_veh) or not is_heli_active
 
     system.yield(2000)
+
+    entity.freeze_entity(heli_veh, false)
 
     local wp = ui.get_waypoint_coord()
     local wpz = get_ground(wp)
