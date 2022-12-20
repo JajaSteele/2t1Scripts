@@ -129,7 +129,7 @@ local animals_table = {
     {name="A_C_Chop", short_name="Chop"},
     {name="A_C_Chimp", short_name="Chimp"},
     {name="A_C_ChickenHawk", short_name="Chicken Hawk"},
-    {name="A_C_Cat_0", short_name="Cat"},
+    {name="A_C_Cat_01", short_name="Cat"},
     {name="A_C_Boar", short_name="Boar"},
 }
 
