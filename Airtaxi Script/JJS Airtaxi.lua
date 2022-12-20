@@ -396,7 +396,7 @@ local spawn_heli = menu.add_feature("Spawn Heli", "action", main_menu.id, functi
             request_control(heli_ped)
             entity.set_entity_velocity(heli_veh, v3(curr_vel.x, curr_vel.y, -0.75))
         end
-    until native.call(0x1DD55701034110E5, heli_veh):__tonumber() < 10 or not is_heli_active
+    until native.call(0x1DD55701034110E5, heli_veh):__tonumber() < 5 or not is_heli_active
 
     notify("Greetings.\nEnter the helicopter to start.","JJS Airtaxi",nil,0xFF00FF)
 
@@ -404,17 +404,23 @@ local spawn_heli = menu.add_feature("Spawn Heli", "action", main_menu.id, functi
         system.yield(0)
     until entity.get_entity_speed(heli_veh) < 1
 
-    native.call(0xE1EF3C1216AFF2CD, heli_ped)
-    
-    entity.freeze_entity(heli_veh, true)
+    request_control(heli_veh)
+    request_control(heli_ped)
+
+    for i1=1, 180 do
+        vehicle.set_heli_blades_speed(heli_veh, (360-i1)/360)
+        system.yield(0)
+    end
 
     repeat
         system.yield(0)
+        vehicle.set_heli_blades_speed(heli_veh, 0.5)
     until ped.is_ped_in_vehicle(player_ped, heli_veh) or not is_heli_active
 
     system.yield(2000)
 
-    entity.freeze_entity(heli_veh, false)
+    request_control(heli_veh)
+    request_control(heli_ped)
 
     local wp = ui.get_waypoint_coord()
     local wpz = get_ground(wp)
@@ -491,7 +497,7 @@ local spawn_heli = menu.add_feature("Spawn Heli", "action", main_menu.id, functi
                 request_control(heli_ped)
                 entity.set_entity_velocity(heli_veh, v3(curr_vel.x, curr_vel.y, -0.75))
             end
-        until native.call(0x1DD55701034110E5, heli_veh):__tonumber() < 10 or not is_heli_active
+        until native.call(0x1DD55701034110E5, heli_veh):__tonumber() < 5 or not is_heli_active
     else
         notify("Hovering above dest","Hovering",nil,0x00AAFF)
         if heli_rappeldown.on and is_heli_active then
@@ -510,9 +516,26 @@ local spawn_heli = menu.add_feature("Spawn Heli", "action", main_menu.id, functi
 
     notify("Arrived to destination! Please exit shortly.","JJS Airtaxi",nil,0x00FF00)
 
-    repeat
-        system.yield(0)
-    until get_taken_seats(heli_veh) <= 1 or not is_heli_active
+    if not heli_hoveratdest.on then
+        repeat
+            system.yield(0)
+        until entity.get_entity_speed(heli_veh) < 1
+        for i1=1, 180 do
+            vehicle.set_heli_blades_speed(heli_veh, (180-i1)/180)
+            system.yield(0)
+        end
+        ai.task_leave_vehicle(heli_ped, heli_veh, 64)
+    end
+
+    if heli_hoveratdest.on then
+        repeat
+            system.yield(0)
+        until get_taken_seats(heli_veh) <= 1 or not is_heli_active
+    else
+        repeat
+            system.yield(0)
+        until get_taken_seats(heli_veh) == 0 or not is_heli_active
+    end
 
     if heli_rappeldown.on then
         repeat
