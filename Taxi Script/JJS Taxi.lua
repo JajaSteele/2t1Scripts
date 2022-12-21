@@ -657,7 +657,7 @@ local taxi_spawn = menu.add_feature("Spawn Taxi", "action", main_menu.id, functi
                 system.yield(500)
             until not ped.is_ped_in_vehicle(taxi_driver, taxi_veh)
 
-            vehicle.set_vehicle_engine_on(taxi_veh, false, false, true)
+            vehicle.set_vehicle_engine_on(taxi_veh, false, false, false)
             if is_vehicle_conv then
                 native.call(0x8F5FB35D7E88FC70, taxi_veh, false)
                 repeat
@@ -941,7 +941,7 @@ local taxi_spawn_pl = menu.add_player_feature("Spawn Taxi", "action", player_men
                 system.yield(500)
             until not ped.is_ped_in_vehicle(taxi_driver, taxi_veh)
 
-            vehicle.set_vehicle_engine_on(taxi_veh, false, false, true)
+            vehicle.set_vehicle_engine_on(taxi_veh, false, false, false)
             if is_vehicle_conv then
                 native.call(0x8F5FB35D7E88FC70, taxi_veh, false)
                 repeat
