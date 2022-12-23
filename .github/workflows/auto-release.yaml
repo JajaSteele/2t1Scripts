@@ -46,6 +46,7 @@ jobs:
             ./Pet/JJS Pet.lua
             ./Avenger utils/JJS Avenger Utils.lua
             ./Airtaxi Script/JJS Airtaxi.lua
+            ./Cargobob/JJS Cargobob.lua
 
 
 
