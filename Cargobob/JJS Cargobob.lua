@@ -25,6 +25,7 @@ end
 
 local vehicle_hash = gameplay.get_hash_key("cargobob")
 local ped_hash = 988062523
+local vehicle_dropheight = 15
 
 local blips = {}
 local heli_ped
@@ -32,6 +33,8 @@ local heli_veh
 
 local is_heli_active = false
 local heli_rappeldown2 = false
+
+local clearing = false
 
 local function clear_all_noyield(delay)
     if delay and type(delay) == "number" then
@@ -58,38 +61,45 @@ local function clear_all(delay,peds,vehicle,reset)
         system.yield(delay)
     end
 
-    for k,v in pairs(blips) do
-        repeat
-            ui.remove_blip(v)
-            system.yield(0)
-        until native.call(0xE41CA53051197A27, v):__tointeger() == 0
-        blips = {}
-    end
+    menu.create_thread(function()
+        local attempts = 0
+        for k,v in pairs(blips) do
+            repeat
+                ui.remove_blip(v)
+                attempts = attempts+1
+                system.yield(0)
+            until native.call(0xE41CA53051197A27, v):__tointeger() == 0 or attempts > 30
+            blips = {}
+        end
+    end)
 
-    local attempts = 0
+    menu.create_thread(function()
+        local attempts = 0
+        if peds and heli_ped ~= nil then
+            repeat
+                request_control(heli_ped)
+                entity.delete_entity(heli_ped)
+                system.yield(0)
+                attempts = attempts+1
+            until not entity.is_an_entity(heli_ped) or attempts > 30
+        end
+        heli_ped = 0
+    end)
 
-    if peds and heli_ped ~= nil then
-        request_control(heli_ped)
-        repeat
-            entity.delete_entity(heli_ped)
-            system.yield(0)
-            attempts = attempts+1
-        until not entity.is_an_entity(heli_ped) or attempts > 300
-    end
+    menu.create_thread(function()
+        local attempts = 0
+        if vehicle and heli_veh ~= nil then
+            repeat
+                request_control(heli_veh)
+                entity.delete_entity(heli_veh)
+                attempts = attempts+1
+                system.yield(0)
+            until not entity.is_an_entity(heli_veh) or attempts > 30
+            heli_veh = 0
+        end
+    end)
 
-    local attempts = 0
-
-    if vehicle and heli_veh ~= nil then
-        request_control(heli_veh)
-        repeat
-            entity.delete_entity(heli_veh)
-            attempts = attempts+1
-            system.yield(0)
-        until not entity.is_an_entity(heli_veh) or attempts > 300
-        heli_veh = 0
-    end
-
-    if vehicle and peds and (reset or true) then
+    if vehicle and peds and reset then
         is_heli_active = false
     end
 end
@@ -121,8 +131,14 @@ local function get_ground(pos)
 end
 
 local function notify(text,title,time,color)
-    if is_heli_active then
+    if is_heli_active and not clearing then
         menu.notify(text,title,time,color)
+    end
+end
+
+local function yield(num)
+    if not clearing then
+        system.yield(num)
     end
 end
 
@@ -143,6 +159,28 @@ local main_menu = menu.add_feature("#FFFFC64D#J#FFFFD375#J#FFFFE1A1#S #FFFFF8EB#
 local magnet_mode = menu.add_feature("Use Magnet?","toggle",main_menu.id)
 magnet_mode.hint = "Use a magnet instead of a hook."
 
+local heli_dropheight = menu.add_feature("Dropping Height = [15]", "action", main_menu.id, function(ft)
+    local status = 1
+    local temp_dropheight
+    while status == 1 do
+        status, temp_dropheight = input.get("Height above Ground","",15,3)
+        system.yield(0)
+    end
+    temp_dropheight = temp_dropheight..".0"
+    vehicle_dropheight = tonumber(temp_dropheight)
+
+    ft.name = "Dropping Height = ["..vehicle_dropheight.."]"
+end)
+heli_dropheight.hint = "Choose the height at which the vehicle will be dropped, Default is 15"
+
+local heli_veh_type = menu.add_feature("Which Vehicle?","autoaction_value_str",main_menu.id)
+heli_veh_type.hint = "Choose which vehicle the cargobob should pick up\n#FF0000FF#Probably won't work on high distance!\n#FF00AAFF#If you're not in the vehicle to help, magnet mode is suggested."
+heli_veh_type:set_str_data({"Current","Personal"})
+
+local heli_dest = menu.add_feature("Which Destination?","autoaction_value_str",main_menu.id)
+heli_dest.hint = "Choose where the cargobob will deliver\n#FF00AAFF#Your position will only be saved once the vehicle is picked up."
+heli_dest:set_str_data({"Waypoint","Here"})
+
 local spawn_cargo = menu.add_feature("Spawn Cargobob","action",main_menu.id, function()
     is_heli_active = true
     local local_player = player.player_id()
@@ -150,12 +188,24 @@ local spawn_cargo = menu.add_feature("Spawn Cargobob","action",main_menu.id, fun
     local player_ped = player.get_player_ped(local_player)
     local player_heading = player.get_player_heading(local_player)
 
-    local player_veh = ped.get_vehicle_ped_is_using(player_ped)
-    local veh_height = native.call(0x5A504562485944DD, player_veh, player_pos, true, false):__tonumber()
-    local veh_pos = entity.get_entity_coords(player_veh)
-    local veh_heading = entity.get_entity_heading(player_veh)
+    local player_veh
+    local veh_height
+    local veh_pos
+    local veh_heading
 
-    local spawn_pos = player_pos+v3(0,0,35)
+    if heli_veh_type.value == 0 then
+        player_veh = ped.get_vehicle_ped_is_using(player_ped)
+        veh_height = native.call(0x5A504562485944DD, player_veh, player_pos, true, false):__tonumber()
+        veh_pos = entity.get_entity_coords(player_veh)
+        veh_heading = entity.get_entity_heading(player_veh)
+    elseif heli_veh_type.value == 1 then
+        player_veh = player.get_personal_vehicle()
+        veh_height = native.call(0x5A504562485944DD, player_veh, player_pos, true, false):__tonumber()
+        veh_pos = entity.get_entity_coords(player_veh)
+        veh_heading = entity.get_entity_heading(player_veh)
+    end
+
+    local spawn_pos = veh_pos+v3(0,0,30)
 
     local pickup_pos = front_of_pos(veh_pos, v3(0,0,veh_heading), -1)
 
@@ -193,13 +243,11 @@ local spawn_cargo = menu.add_feature("Spawn Cargobob","action",main_menu.id, fun
     native.call(0x1F4ED342ACEFE62D, heli_veh, true, true)
 
     native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, pickup_pos.x, pickup_pos.y, pickup_pos.z+veh_height+2, 4, 70.0, 3.0, veh_heading, 100, 1, 400.0, 64+4096)
-    native.call(0x7BEB0C7A235F6F3B, heli_veh, 0)
-    native.call(0x9A665550F8DA349B, heli_veh, true)
 
     if magnet_mode.on then
+        native.call(0x7BEB0C7A235F6F3B, heli_veh, 1)
+
         native.call(0xE301BD63E9E13CF0, player_veh, heli_veh)
-        native.call(0xBCBFCD9D1DAC19E2, heli_veh, 0.0)
-        native.call(0xED8286F71A819BAA, heli_veh, 0.0)
 
         repeat
             local curr_heli_pos = entity.get_entity_coords(heli_veh)
@@ -207,18 +255,29 @@ local spawn_cargo = menu.add_feature("Spawn Cargobob","action",main_menu.id, fun
             local dist = native.call(0xB7A628320EFF8E47, curr_heli_pos, curr_veh_pos):__tonumber()
             system.yield(0)
             print(dist)
-        until dist < 45 or not is_heli_active
+        until dist < 45 or clearing
+
+        native.call(0x9A665550F8DA349B, heli_veh, true)
     else
+        native.call(0x7BEB0C7A235F6F3B, heli_veh, 0)
+        native.call(0x9A665550F8DA349B, heli_veh, true)
         repeat
             system.yield(0)
-        until native.call(0x873B82D42AC2B9E5, heli_veh):__tointeger() == player_veh
+        until native.call(0x873B82D42AC2B9E5, heli_veh):__tointeger() == player_veh or clearing
     end
     print("Picked up vehicle")
 
-    local wp = ui.get_waypoint_coord()
-    local wpz = get_ground(wp)
+    local wp3
 
-    local wp3 = v3(wp.x, wp.y, wpz+100)
+    if heli_dest.value == 0 then
+        local wp = ui.get_waypoint_coord()
+        local wpz = get_ground(wp)
+
+        wp3 = v3(wp.x, wp.y, wpz)
+    elseif heli_dest.value == 1 then
+        wp3 = player.get_player_coords(local_player)
+    end
+        
 
     notify("Flying to:\nX: "..wp3.x.." Y: "..wp3.y.." Z: "..wp3.z,"Flying to Dest",nil,0x00AAFF)
 
@@ -234,7 +293,7 @@ local spawn_cargo = menu.add_feature("Spawn Cargobob","action",main_menu.id, fun
     request_control(heli_veh)
     request_control(heli_ped)
     native.call(0xE1EF3C1216AFF2CD, heli_ped)
-    native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z, 4, 50.0, 50.0, -1, 100, 30, 200.0, 0)
+    native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z+100, 4, 50.0, 50.0, -1, 500, 30, 200.0, 0)
 
     while true do
         local heli_pos_live = entity.get_entity_coords(heli_veh)
@@ -245,7 +304,7 @@ local spawn_cargo = menu.add_feature("Spawn Cargobob","action",main_menu.id, fun
 
         local hori_dist = dist_x+dist_y
 
-        if hori_dist < 300 or not is_heli_active then
+        if hori_dist < 300 or clearing then
             print("Slowing Down")
             native.call(0x5C9B84BD7D31D908, heli_ped, 20)
             break
@@ -253,11 +312,10 @@ local spawn_cargo = menu.add_feature("Spawn Cargobob","action",main_menu.id, fun
         system.yield(0)
     end
 
-    print("Landing to dest")
     request_control(heli_veh)
     request_control(heli_ped)
     native.call(0xE1EF3C1216AFF2CD, heli_ped)
-    native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z, 4, 20.0, 10.0, -1, 50, 30, 75.0, 0)
+    native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z+100, 4, 20.0, 10.0, -1, 100, 20, 75.0, 0)
 
     while true do
         local heli_pos_live = entity.get_entity_coords(heli_veh)
@@ -268,7 +326,7 @@ local spawn_cargo = menu.add_feature("Spawn Cargobob","action",main_menu.id, fun
 
         local hori_dist = dist_x+dist_y
 
-        if hori_dist < 15 or not is_heli_active then
+        if hori_dist < 15 or clearing then
             print("Landing")
             break
         end
@@ -277,43 +335,70 @@ local spawn_cargo = menu.add_feature("Spawn Cargobob","action",main_menu.id, fun
 
     local curr_heli_heading = entity.get_entity_heading(heli_veh)
 
-    native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z-85, 4, 50.0, 50.0, curr_heli_heading, 100, 5, 400.0, 1)
+    request_control(heli_veh)
+    request_control(heli_ped)
+    native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z+vehicle_dropheight, 4, 50.0, 50.0, curr_heli_heading, 100, 5, 400.0, 1)
 
     repeat
         local heli_pos_live = entity.get_entity_coords(heli_veh)
 
         local dist_x = math.abs(heli_pos_live.x - wp3.x)
         local dist_y = math.abs(heli_pos_live.y - wp3.y)
-        local dist_z = math.abs(heli_pos_live.z - (wp3.z-85))
+        local dist_z = math.abs(heli_pos_live.z - (wp3.z+vehicle_dropheight))
 
         local full_dist = dist_x+dist_y+dist_z
         system.yield(0)
-    until (full_dist < 30 and entity.get_entity_speed(heli_veh) < 8) or not is_heli_active
+    until (full_dist < 15 and entity.get_entity_speed(heli_veh) < 8) or clearing
 
-    system.yield(2000)
+    yield(2000)
 
+    request_control(heli_veh)
+    request_control(heli_ped)
     if magnet_mode.on then
         native.call(0x9A665550F8DA349B, heli_veh, false)
     else
-        native.call(0x0E21D3DF1051399D, player_veh, heli_veh)
+        native.call(0x9A665550F8DA349B, heli_veh, false)
+        native.call(0xADF7BE450512C12F, player_veh)
     end
 
-    system.yield(3000)
+    native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z+vehicle_dropheight+100, 4, 90.0, 50.0, curr_heli_heading, 200, 5, 1.0, 1)
+
+    yield(3000)
 
     native.call(0xDE564951F95E09ED, heli_veh, true, true)
     native.call(0xDE564951F95E09ED, heli_ped, true, true)
 
-    system.yield(2000)
+    yield(2000)
 
-    notify("Thanks you for using JJS-Airtaxi!","Thanks You",nil,0xc203fc)
-    clear_all(nil,true,true)
+    notify("Thanks you for using JJS-Cargobob!","Thanks You",nil,0xc203fc)
+    clear_all(nil,true,true,false)
     is_heli_active = false
+    clearing = false
 end)
 spawn_cargo.hint = "Spawn the cargobob to pick up the player's current vehicle, then brings it to waypoint."
 
+local heli_status = menu.add_feature("Status: ", "action", main_menu.id, function()
+    menu.notify("idk what you expected to happen, but hello","fard",nil,0x00FF00)
+end)
+heli_status.hint = "The current status of the cargobob script"
+
+local status_thread = menu.create_thread(function()
+    while true do
+        if is_heli_active then
+            heli_status.name = ("Status: #FF00FF00#Active")
+        else
+            heli_status.name = ("Status: #FF0000FF#Inactive")
+        end
+
+        system.yield(500)
+    end
+end)
+
 local clean_heli = menu.add_feature("Clear All","action",main_menu.id,function()
     clear_all(nil,true,true,false)
+    clearing = true
 end)
-clean_heli.hint = "Clean up heli + pilot"
+clean_heli.hint = "Clean up heli + pilot (Might take a while before being inactive)"
+
 
 event.add_event_listener("exit", clear_all_noyield)
