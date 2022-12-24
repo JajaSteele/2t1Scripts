@@ -26,6 +26,7 @@ end
 local vehicle_hash = gameplay.get_hash_key("cargobob")
 local ped_hash = 988062523
 local vehicle_dropheight = 15
+local vehicle_speed = 50.0
 
 local blips = {}
 local heli_ped
@@ -181,6 +182,38 @@ local heli_dest = menu.add_feature("Which Destination?","autoaction_value_str",m
 heli_dest.hint = "Choose where the cargobob will deliver\n#FF00AAFF#Your position will only be saved once the vehicle is picked up."
 heli_dest:set_str_data({"Waypoint","Here"})
 
+local hover_mode = menu.add_feature("No Dropping","toggle",main_menu.id,function(ft)
+    if not ft.on and is_heli_active then
+        if magnet_mode.on then
+            native.call(0x9A665550F8DA349B, heli_veh, false)
+        else
+            native.call(0x9A665550F8DA349B, heli_veh, false)
+            native.call(0xADF7BE450512C12F, player_veh)
+        end
+    end
+end)
+hover_mode.hint = "The cargobob will hover above dest instead of dropping\nDisable this to drop"
+
+local heli_speed = menu.add_feature("Speed = [50.0]", "action", main_menu.id, function(ft)
+    local status = 1
+    local temp_speed
+    while status == 1 do
+        status, temp_speed = input.get("Speed Input","",15,3)
+        system.yield(0)
+    end
+    temp_speed = temp_speed..".0"
+    vehicle_speed = tonumber(temp_speed)
+
+    ft.name = "Speed = ["..vehicle_speed.."]"
+    
+    if is_heli_active then
+        menu.notify("Speed updated to "..vehicle_speed,"Updated Speed", nil, 0x00FF00)
+        native.call(0x5C9B84BD7D31D908, heli_ped, vehicle_speed)
+        native.call(0x404A5AA9B9F0B746, heli_ped, vehicle_speed)
+    end
+end)
+heli_speed.hint = "Choose the speed of the cargobob. Default is 50.0"
+
 local spawn_cargo = menu.add_feature("Spawn Cargobob","action",main_menu.id, function()
     is_heli_active = true
     local local_player = player.player_id()
@@ -242,7 +275,7 @@ local spawn_cargo = menu.add_feature("Spawn Cargobob","action",main_menu.id, fun
     native.call(0x1F4ED342ACEFE62D, heli_ped, true, true)
     native.call(0x1F4ED342ACEFE62D, heli_veh, true, true)
 
-    native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, pickup_pos.x, pickup_pos.y, pickup_pos.z+veh_height+2, 4, 70.0, 3.0, veh_heading, 100, 1, 400.0, 64+4096)
+    native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, pickup_pos.x, pickup_pos.y, pickup_pos.z+veh_height+3, 4, 70.0, 3.0, veh_heading, 100, 1, 400.0, 64+4096)
 
     if magnet_mode.on then
         native.call(0x7BEB0C7A235F6F3B, heli_veh, 1)
@@ -293,7 +326,7 @@ local spawn_cargo = menu.add_feature("Spawn Cargobob","action",main_menu.id, fun
     request_control(heli_veh)
     request_control(heli_ped)
     native.call(0xE1EF3C1216AFF2CD, heli_ped)
-    native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z+100, 4, 50.0, 50.0, -1, 500, 30, 200.0, 0)
+    native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z+120, 4, vehicle_speed, 50.0, -1, 500, 30, 200.0, 0)
 
     while true do
         local heli_pos_live = entity.get_entity_coords(heli_veh)
@@ -304,7 +337,7 @@ local spawn_cargo = menu.add_feature("Spawn Cargobob","action",main_menu.id, fun
 
         local hori_dist = dist_x+dist_y
 
-        if hori_dist < 300 or clearing then
+        if hori_dist < 750 or clearing then
             print("Slowing Down")
             native.call(0x5C9B84BD7D31D908, heli_ped, 20)
             break
@@ -315,7 +348,7 @@ local spawn_cargo = menu.add_feature("Spawn Cargobob","action",main_menu.id, fun
     request_control(heli_veh)
     request_control(heli_ped)
     native.call(0xE1EF3C1216AFF2CD, heli_ped)
-    native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z+100, 4, 30.0, 10.0, -1, 100, 20, 75.0, 0)
+    native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z+vehicle_dropheight, 4, 30.0, 10.0, -1, 100, 20, 75.0, 0)
 
     while true do
         local heli_pos_live = entity.get_entity_coords(heli_veh)
@@ -337,7 +370,7 @@ local spawn_cargo = menu.add_feature("Spawn Cargobob","action",main_menu.id, fun
 
     request_control(heli_veh)
     request_control(heli_ped)
-    native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z+vehicle_dropheight, 4, 50.0, 5.0, curr_heli_heading, 100, 5, 5.0, 1)
+    native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z+vehicle_dropheight, 4, 20.0, 5.0, curr_heli_heading, 100, 5, 30.0, 1)
 
     repeat
         local heli_pos_live = entity.get_entity_coords(heli_veh)
@@ -352,6 +385,11 @@ local spawn_cargo = menu.add_feature("Spawn Cargobob","action",main_menu.id, fun
 
     yield(2000)
 
+    if hover_mode.on then
+        repeat
+            system.yield(0)
+        until hover_mode.on == false or clearing
+    end
     request_control(heli_veh)
     request_control(heli_ped)
     if magnet_mode.on then
