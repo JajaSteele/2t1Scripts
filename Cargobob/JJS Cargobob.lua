@@ -26,7 +26,7 @@ end
 local vehicle_hash = gameplay.get_hash_key("cargobob")
 local ped_hash = 988062523
 local vehicle_dropheight = 15
-local vehicle_speed = 50.0
+local vehicle_speed = 35.0
 
 local blips = {}
 local heli_ped
@@ -194,7 +194,7 @@ local hover_mode = menu.add_feature("No Dropping","toggle",main_menu.id,function
 end)
 hover_mode.hint = "The cargobob will hover above dest instead of dropping\nDisable this to drop"
 
-local heli_speed = menu.add_feature("Speed = [50.0]", "action", main_menu.id, function(ft)
+local heli_speed = menu.add_feature("Speed = [35.0]", "action", main_menu.id, function(ft)
     local status = 1
     local temp_speed
     while status == 1 do
@@ -212,7 +212,7 @@ local heli_speed = menu.add_feature("Speed = [50.0]", "action", main_menu.id, fu
         native.call(0x404A5AA9B9F0B746, heli_ped, vehicle_speed)
     end
 end)
-heli_speed.hint = "Choose the speed of the cargobob. Default is 50.0"
+heli_speed.hint = "Choose the speed of the cargobob. Default is 35.0"
 
 local spawn_cargo = menu.add_feature("Spawn Cargobob","action",main_menu.id, function()
     is_heli_active = true
