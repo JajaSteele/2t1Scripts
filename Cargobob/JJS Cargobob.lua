@@ -233,12 +233,13 @@ local spawn_cargo = menu.add_feature("Spawn Cargobob","action",main_menu.id, fun
         veh_heading = entity.get_entity_heading(player_veh)
     elseif heli_veh_type.value == 1 then
         player_veh = player.get_personal_vehicle()
+        entity.set_entity_as_mission_entity(player_veh, true, false)
         veh_height = native.call(0x5A504562485944DD, player_veh, player_pos, true, false):__tonumber()
         veh_pos = entity.get_entity_coords(player_veh)
         veh_heading = entity.get_entity_heading(player_veh)
     end
 
-    local spawn_pos = veh_pos+v3(0,0,30)
+    local spawn_pos = veh_pos+v3(0,0,veh_height+10)
 
     local pickup_pos = front_of_pos(veh_pos, v3(0,0,veh_heading), -1)
 
@@ -274,8 +275,16 @@ local spawn_cargo = menu.add_feature("Spawn Cargobob","action",main_menu.id, fun
 
     native.call(0x1F4ED342ACEFE62D, heli_ped, true, true)
     native.call(0x1F4ED342ACEFE62D, heli_veh, true, true)
+    
+    local offset
+    if magnet_mode.on then
+        offset = 2
+    else
+        offset = 3
+    end
 
-    native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, pickup_pos.x, pickup_pos.y, pickup_pos.z+veh_height+3, 4, 70.0, 3.0, veh_heading, 100, 1, 400.0, 64+4096)
+
+    native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, pickup_pos.x, pickup_pos.y, pickup_pos.z+veh_height+offset, 4, 70.0, 3.0, veh_heading, 100, 1, 400.0, 64+4096)
 
     if magnet_mode.on then
         native.call(0x7BEB0C7A235F6F3B, heli_veh, 1)
@@ -398,6 +407,8 @@ local spawn_cargo = menu.add_feature("Spawn Cargobob","action",main_menu.id, fun
         native.call(0x9A665550F8DA349B, heli_veh, false)
         native.call(0xADF7BE450512C12F, player_veh)
     end
+    
+    entity.set_entity_as_mission_entity(player_veh, false, false)
 
     native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z+vehicle_dropheight+100, 4, 90.0, 50.0, curr_heli_heading, 200, 5, 1.0, 1)
 
