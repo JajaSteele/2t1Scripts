@@ -1,6 +1,24 @@
-if menu.get_trust_flags() ~= (1 << 2) then
+if not menu.is_trusted_mode_enabled(1 << 2) then
     menu.notify("JJS Cargobob requires \"Natives\" Trust flag", "Trust Error", nil, 0x0000FF)
     menu.exit()
+end
+
+if menu.is_trusted_mode_enabled(1 << 3) then
+    local url = "https://raw.githubusercontent.com/JJS-Laboratories/2t1Scripts/main/Cargobob/JJS%20Cargobob.lua"
+    local code, body, headers = web.request(url)
+
+    local path = utils.get_appdata_path("PopstarDevs","").."\\2Take1Menu\\scripts\\JJS.Cargobob.lua"
+
+    local file1 = io.open(path, "r")
+    curr_file = file1:read("*a")
+    file1:close()
+
+    if curr_file ~= body then
+        menu.notify("Update detected! Downloading..","Update!",nil,0xFF00FF)
+        local file2 = io.open(path, "w")
+        file2:write(body)
+        file2:close()
+    end
 end
 
 local function request_model(_hash)

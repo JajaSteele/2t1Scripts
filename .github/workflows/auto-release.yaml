@@ -40,13 +40,13 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            ./Airline Script/JJS Airline.lua
-            ./Taxi Script/JJS Taxi.lua
-            ./Translator/JJS Translator.lua
-            ./Pet/JJS Pet.lua
-            ./Avenger utils/JJS Avenger Utils.lua
-            ./Airtaxi Script/JJS Airtaxi.lua
-            ./Cargobob/JJS Cargobob.lua
+            ./Airline Script/JJS.Airline.lua
+            ./Taxi Script/JJS.Taxi.lua
+            ./Translator/JJS.Translator.lua
+            ./Pet/JJS.Pet.lua
+            ./Avenger utils/JJS.Avenger.Utils.lua
+            ./Airtaxi Script/JJS.Airtaxi.lua
+            ./Cargobob/JJS.Cargobob.lua
 
 
 

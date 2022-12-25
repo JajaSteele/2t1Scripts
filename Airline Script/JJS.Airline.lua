@@ -1,4 +1,4 @@
-if menu.get_trust_flags() ~= (1 << 2) then
+if not menu.is_trusted_mode_enabled(1 << 2) then
     menu.notify("JJS Airline requires \"Natives\" Trust flag", "Trust Error", nil, 0x0000FF)
     menu.exit()
 end

@@ -1,4 +1,4 @@
-if menu.get_trust_flags() ~= (1 << 2) then
+if not menu.is_trusted_mode_enabled(1 << 2) then
     menu.notify("JJS Airtaxi requires \"Natives\" Trust flag", "Trust Error", nil, 0x0000FF)
     menu.exit()
 end
@@ -397,7 +397,7 @@ local spawn_heli = menu.add_feature("Spawn Heli", "action", main_menu.id, functi
             request_control(heli_ped)
             entity.set_entity_velocity(heli_veh, v3(curr_vel.x, curr_vel.y, -0.75))
         end
-    until native.call(0x1DD55701034110E5, heli_veh):__tonumber() < 5 or not is_heli_active
+    until native.call(0x1DD55701034110E5, heli_veh):__tonumber() < 5 or native.call(0xCFB0A0D8EDD145A3, heli_veh):__tointeger() == 1 or not is_heli_active
 
     notify("Greetings.\nEnter the helicopter to start.","JJS Airtaxi",nil,0xFF00FF)
 
