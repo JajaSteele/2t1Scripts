@@ -15,12 +15,13 @@ if menu.is_trusted_mode_enabled(1 << 3) then
         file1:close()
 
         if curr_file ~= body then
-            menu.notify("Update detected! Downloading..","Cargobob Update",nil,0xFF00FF)
+            menu.notify("Update detected! Please reload the script.\n#FF00AAFF#To disable updates, disable Trusted HTTP","Cargobob Update",nil,0xFF00FF)
             local file2 = io.open(path, "w")
             file2:write(body)
             file2:close()
+            menu.exit()
         else
-            menu.notify("No update detected","No Update!",nil,0xFF00FF)
+            menu.notify("No update detected\n#FF00AAFF#To disable updates, disable Trusted HTTP","No Update!",nil,0xFF00FF)
         end
     end)
 end
