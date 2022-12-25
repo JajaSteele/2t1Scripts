@@ -3,6 +3,46 @@ if not menu.is_trusted_mode_enabled(1 << 2) then
     menu.exit()
 end
 
+local function question(y,n)
+    while true do
+        if controls.is_control_pressed(0, y) then
+            return true
+        elseif controls.is_control_pressed(0, n) then
+            return false
+        end
+        system.yield(0)
+    end
+end
+
+if menu.is_trusted_mode_enabled(1 << 3) then
+    menu.create_thread(function()
+        local url = "https://github.com/JJS-Laboratories/2t1Scripts/raw/main/Taxi%20Script/JJS.Taxi.lua"
+        local code, body, headers = web.request(url)
+
+        local path = utils.get_appdata_path("PopstarDevs","").."\\2Take1Menu\\scripts\\JJS.Taxi.lua"
+
+        local file1 = io.open(path, "r")
+        curr_file = file1:read("*a")
+        file1:close()
+
+        if curr_file ~= body then
+            menu.notify("Update detected!\nPress 'Enter' to download or 'Backspace' to cancel\n#FF00AAFF#To disable updates, disable Trusted HTTP","JJS Taxi",nil,0x00AAFF)
+            choice = question(201, 202)
+            if choice then
+                menu.notify("Downloaded! Please reload the script","JJS Taxi",nil,0x00FF00)
+                local file2 = io.open(path, "w")
+                file2:write(body)
+                file2:close()
+                menu.exit()
+            else
+                menu.notify("Update Cancelled","JJS Taxi",nil,0x0000FF)
+            end
+        else
+            menu.notify("No update detected\n#FF00AAFF#To disable updates, disable Trusted HTTP","JJS Taxi",nil,0xFF00FF)
+        end
+    end)
+end
+
 
 local function request_model(_hash)
     if not streaming.has_model_loaded(_hash) then

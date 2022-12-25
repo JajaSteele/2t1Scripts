@@ -3,6 +3,17 @@ if not menu.is_trusted_mode_enabled(1 << 2) then
     menu.exit()
 end
 
+local function question(y,n)
+    while true do
+        if controls.is_control_pressed(0, y) then
+            return true
+        elseif controls.is_control_pressed(0, n) then
+            return false
+        end
+        system.yield(0)
+    end
+end
+
 if menu.is_trusted_mode_enabled(1 << 3) then
     menu.create_thread(function()
         local url = "https://raw.githubusercontent.com/JJS-Laboratories/2t1Scripts/main/Cargobob/JJS.Cargobob.lua"
@@ -15,13 +26,19 @@ if menu.is_trusted_mode_enabled(1 << 3) then
         file1:close()
 
         if curr_file ~= body then
-            menu.notify("Update detected! Please reload the script.\n#FF00AAFF#To disable updates, disable Trusted HTTP","Cargobob Update",nil,0xFF00FF)
-            local file2 = io.open(path, "w")
-            file2:write(body)
-            file2:close()
-            menu.exit()
+            menu.notify("Update detected!\nPress 'Enter' to download or 'Backspace' to cancel\n#FF00AAFF#To disable updates, disable Trusted HTTP","JJS Cargobob",nil,0x00AAFF)
+            choice = question(201, 202)
+            if choice then
+                menu.notify("Downloaded! Please reload the script","JJS Cargobob",nil,0x00FF00)
+                local file2 = io.open(path, "w")
+                file2:write(body)
+                file2:close()
+                menu.exit()
+            else
+                menu.notify("Update Cancelled","JJS Cargobob",nil,0x0000FF)
+            end
         else
-            menu.notify("No update detected\n#FF00AAFF#To disable updates, disable Trusted HTTP","No Update!",nil,0xFF00FF)
+            menu.notify("No update detected\n#FF00AAFF#To disable updates, disable Trusted HTTP","JJS Cargobob",nil,0xFF00FF)
         end
     end)
 end
