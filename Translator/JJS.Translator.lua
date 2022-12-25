@@ -16,7 +16,7 @@ end
 
 if menu.is_trusted_mode_enabled(1 << 3) then
     menu.create_thread(function()
-        local url = "https://github.com/JJS-Laboratories/2t1Scripts/raw/main/Translator/JJS.Translator.lua"
+        local url = "https://raw.githubusercontent.com/JJS-Laboratories/2t1Scripts/main/Translator/JJS.Translator.lua"
         local code, body, headers = web.request(url)
 
         local path = utils.get_appdata_path("PopstarDevs","").."\\2Take1Menu\\scripts\\JJS.Translator.lua"
