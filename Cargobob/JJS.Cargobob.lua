@@ -375,7 +375,7 @@ local spawn_cargo = menu.add_feature("Spawn Cargobob","action",main_menu.id, fun
     request_control(heli_veh)
     request_control(heli_ped)
     native.call(0xE1EF3C1216AFF2CD, heli_ped)
-    native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z+120, 4, vehicle_speed, 50.0, -1, 500, 30, 200.0, 0)
+    native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z+120, 4, vehicle_speed, 50.0, -1, 500, 55, 200.0, 0)
 
     while true do
         local heli_pos_live = entity.get_entity_coords(heli_veh)
@@ -397,7 +397,7 @@ local spawn_cargo = menu.add_feature("Spawn Cargobob","action",main_menu.id, fun
     request_control(heli_veh)
     request_control(heli_ped)
     native.call(0xE1EF3C1216AFF2CD, heli_ped)
-    native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z+vehicle_dropheight, 4, 30.0, 10.0, -1, 100, 20, 75.0, 0)
+    native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z+vehicle_dropheight, 4, 30.0, 10.0, -1, 100, 35, 75.0, 0)
 
     while true do
         local heli_pos_live = entity.get_entity_coords(heli_veh)
@@ -419,7 +419,7 @@ local spawn_cargo = menu.add_feature("Spawn Cargobob","action",main_menu.id, fun
 
     request_control(heli_veh)
     request_control(heli_ped)
-    native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z+vehicle_dropheight, 4, 20.0, 5.0, curr_heli_heading, 100, 5, 30.0, 1)
+    native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z+vehicle_dropheight, 4, 10.0, 5.0, curr_heli_heading, 100, 1, 30.0, 1)
 
     repeat
         local heli_pos_live = entity.get_entity_coords(heli_veh)
@@ -429,8 +429,14 @@ local spawn_cargo = menu.add_feature("Spawn Cargobob","action",main_menu.id, fun
         local dist_z = math.abs(heli_pos_live.z - (wp3.z+vehicle_dropheight))
 
         local hori_dist = dist_x+dist_y
+
+        local rot_s = entity.get_entity_rotation_velocity(heli_veh)
+        local rot_s_veh = entity.get_entity_rotation_velocity(player_veh)
+
+        local rot_speed = math.abs(rot_s.x)+math.abs(rot_s.y)+math.abs(rot_s.z)
+        local rot_speed_veh = math.abs(rot_s_veh.x)+math.abs(rot_s_veh.y)+math.abs(rot_s_veh.z)
         system.yield(0)
-    until (hori_dist < 10 and dist_z < 25 and entity.get_entity_speed(heli_veh) < 8) or clearing
+    until (hori_dist < 10 and dist_z < 25 and entity.get_entity_speed(heli_veh) < 2 and entity.get_entity_speed(player_veh) < 2 and rot_speed_veh < 1 and rot_speed < 1) or clearing
 
     yield(2000)
 
