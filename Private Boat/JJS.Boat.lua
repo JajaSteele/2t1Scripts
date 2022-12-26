@@ -336,6 +336,10 @@ local autpilot_wp = menu.add_feature("Autopilot to WP","action",main_menu.id, fu
         native.call(0x75DBEC174AEEAD10, boat_veh, false)
         ai.task_vehicle_drive_to_coord(boat_ped, boat_veh, v3(wp.x, wp.y, 0.0), vehicle_speed, 0, 0, drive_mode, 30, 0)
 
+        repeat
+            system.yield(0)
+        until vehicle.get_ped_in_vehicle_seat(boat_veh or 0, -1) == boat_ped
+
         native.call(0x1913FE4CBF41C463, boat_ped, 255, true)
         native.call(0x1913FE4CBF41C463, boat_ped, 251, true)
 
