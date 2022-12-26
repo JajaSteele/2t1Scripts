@@ -283,6 +283,8 @@ local spawn_boat = menu.add_feature("Spawn Boat","action",main_menu.id,function(
         native.call(0x8821196D91FA2DE5, boat_veh, true)
         native.call(0x34E710FF01247C5A, boat_veh, 2)
 
+        vehicle.set_vehicle_engine_on(boat_veh, false, true, false)
+
         if boat_radio_toggle.on then
             native.call(0x3B988190C0AA6C0B, boat_veh, true)
             native.call(0x1B9C0099CB942AC6, boat_veh, radio_stations[boat_radio.value+1].id)
