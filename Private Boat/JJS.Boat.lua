@@ -334,7 +334,8 @@ local autpilot_wp = menu.add_feature("Autopilot to WP","action",main_menu.id, fu
         local wp = ui.get_waypoint_coord()
 
         native.call(0x75DBEC174AEEAD10, boat_veh, false)
-        ai.task_vehicle_drive_to_coord(boat_ped, boat_veh, v3(wp.x, wp.y, 0.0), vehicle_speed, 0, 0, drive_mode, 30, 0)
+        --ai.task_vehicle_drive_to_coord(boat_ped, boat_veh, v3(wp.x, wp.y, 0.0), vehicle_speed, 0, 0, drive_mode, 30, 0)
+        native.call(0x15C86013127CE63F, boat_ped, boat_veh, 0, 0, wp.x, wp.y, 0.0, 4, vehicle_speed, drive_mode, 30, 7)
 
         repeat
             system.yield(0)
