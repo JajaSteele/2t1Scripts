@@ -3,6 +3,46 @@ if not menu.is_trusted_mode_enabled(1 << 2) then
     menu.exit()
 end
 
+local function question(y,n)
+    while true do
+        if controls.is_control_pressed(0, y) then
+            return true
+        elseif controls.is_control_pressed(0, n) then
+            return false
+        end
+        system.yield(0)
+    end
+end
+
+if menu.is_trusted_mode_enabled(1 << 3) then
+    menu.create_thread(function()
+        local url = "https://raw.githubusercontent.com/JJS-Laboratories/2t1Scripts/main/Private%20Boat/JJS.Boat.lua"
+        local code, body, headers = web.request(url)
+
+        local path = utils.get_appdata_path("PopstarDevs","").."\\2Take1Menu\\scripts\\JJS.Boat.lua"
+
+        local file1 = io.open(path, "r")
+        curr_file = file1:read("*a")
+        file1:close()
+
+        if curr_file ~= body then
+            menu.notify("Update detected!\nPress 'Enter' to download or 'Backspace' to cancel\n#FF00AAFF#To disable updates, disable Trusted HTTP","JJS Boat",nil,0x00AAFF)
+            choice = question(201, 202)
+            if choice then
+                menu.notify("Downloaded! Please reload the script","JJS Boat",nil,0x00FF00)
+                local file2 = io.open(path, "w")
+                file2:write(body)
+                file2:close()
+                menu.exit()
+            else
+                menu.notify("Update Cancelled","JJS Boat",nil,0x0000FF)
+            end
+        else
+            menu.notify("No update detected\n#FF00AAFF#To disable updates, disable Trusted HTTP","JJS Boat",nil,0xFF00FF)
+        end
+    end)
+end
+
 local function request_model(_hash)
     if not streaming.has_model_loaded(_hash) then
         streaming.request_model(_hash)
@@ -23,10 +63,44 @@ local function request_control(_ent)
     end
 end
 
+local radio_stations = {
+    {id="RADIO_11_TALK_02", name="Blaine County Radio"},
+    {id="RADIO_12_REGGAE", name="The Blue Ark"},
+    {id="RADIO_13_JAZZ", name="Worldwide FM"},
+    {id="RADIO_14_DANCE_02", name="FlyLo FM"},
+    {id="RADIO_15_MOTOWN", name="The Lowdown 9.11"},
+    {id="RADIO_20_THELAB", name="The Lab"},
+    {id="RADIO_16_SILVERLAKE", name="Radio Mirror Park"},
+    {id="RADIO_17_FUNK", name="Space 103.2"},
+    {id="RADIO_18_90S_ROCK", name="Vinewood Boulevard Radio"},
+    {id="RADIO_21_DLC_XM17", name="Blonded LS 97.8 FM"},
+    {id="RADIO_22_DLC_BATTLE_MIX1_RADIO", name="LS Underground Radio"},
+    {id="RADIO_23_DLC_XM19_RADIO", name="iFruit Radio"},
+    {id="RADIO_19_USER", name="Self Radio"},
+    {id="RADIO_01_CLASS_ROCK", name="LS Rock Radio"},
+    {id="RADIO_02_POP", name="Non-Stop-Pop FM"},
+    {id="RADIO_03_HIPHOP_NEW", name="Radio LS"},
+    {id="RADIO_04_PUNK", name="Channel X"},
+    {id="RADIO_05_TALK_01", name="West Coast Talk"},
+    {id="RADIO_06_COUNTRY", name="Rebel Radio"},
+    {id="RADIO_07_DANCE_01", name="Soulwax FM"},
+    {id="RADIO_08_MEXICAN", name="East Los FM"},
+    {id="RADIO_09_HIPHOP_OLD", name="West Coast Classics"},
+    {id="RADIO_36_AUDIOPLAYER", name="Media Player"},
+    {id="RADIO_35_DLC_HEI4_MLR", name="The Music Locker"},
+    {id="RADIO_34_DLC_HEI4_KULT", name="Kult FM"},
+    {id="RADIO_27_DLC_PRHEI4", name="Still Slipping LS"},
+}
+
+local radio_data = {}
+for k,v in ipairs(radio_stations) do
+    radio_data[#radio_data+1] = v.name
+end
+
 local vehicle_hash = gameplay.get_hash_key("marquis")
 local vehicle_name = "marquis"
 local ped_hash = 988062523
-local vehicle_speed = 35.0
+local vehicle_speed = 20.0
 local drive_mode = 787005
 
 local blips = {}
@@ -133,6 +207,7 @@ end
 
 local main_menu = menu.add_feature("#FFFFC64D#J#FFFFD375#J#FFFFE1A1#S #FFFFF8EB#Boat", "parent", 0)
 
+
 local boat_select = menu.add_feature("Boat Model = [marquis]","action",main_menu.id,function(ft)
     local status = 1
     while status == 1 do
@@ -155,25 +230,26 @@ local boat_select = menu.add_feature("Boat Model = [marquis]","action",main_menu
 end)
 boat_select.hint = "Set the model for your boat."
 
-local boat_speed = menu.add_feature("Speed = [35.0]", "action", main_menu.id, function(ft)
-    local status = 1
-    local temp_speed
-    while status == 1 do
-        status, temp_speed = input.get("Speed Input","",15,3)
-        system.yield(0)
-    end
-    temp_speed = temp_speed..".0"
-    vehicle_speed = tonumber(temp_speed)
+local radio_menu = menu.add_feature("Radio","parent",main_menu.id)
+radio_menu.hint = "Unfortunately this only works if you're in a passenger seat/driving it :C"
 
-    ft.name = "Speed = ["..vehicle_speed.."]"
-    
-    if is_boat_active then
-        menu.notify("Speed updated to "..vehicle_speed,"Updated Speed", nil, 0x00FF00)
-        native.call(0x5C9B84BD7D31D908, boat_ped, vehicle_speed)
-        native.call(0x404A5AA9B9F0B746, boat_ped, vehicle_speed)
+local boat_radio = menu.add_feature("Station","action_value_str",radio_menu.id,function(ft)
+    if entity.is_an_entity(boat_veh or 0) then
+        native.call(0x1B9C0099CB942AC6, boat_veh, radio_stations[ft.value+1].id)
+        menu.notify("Set radio to "..radio_stations[ft.value+1].name.."("..radio_stations[ft.value+1].id..")","Radio",nil,0xFF00FF)
     end
 end)
-boat_speed.hint = "Choose the speed of the boat. Default is 35.0"
+boat_radio.hint = "Choose the radio station to use!\nYou must 'Select' the radio after choosing the one you want."
+boat_radio:set_str_data(radio_data)
+
+local boat_radio_toggle = menu.add_feature("Enable","toggle",radio_menu.id,function(ft)
+    if entity.is_an_entity(boat_veh or 0) then
+        vehicle.set_vehicle_engine_on(boat_veh, true, true, false)
+        native.call(0x3B988190C0AA6C0B, boat_veh, ft.on)
+        native.call(0x1B9C0099CB942AC6, boat_veh, radio_stations[boat_radio.value+1].id)
+    end
+end)
+boat_radio_toggle.hint = "Toggle the radio ON or OFF"
 
 local spawn_boat = menu.add_feature("Spawn Boat","action",main_menu.id,function()
     if not entity.is_an_entity(boat_veh or 0) and not entity.is_an_entity(boat_ped or 0) then
@@ -191,6 +267,13 @@ local spawn_boat = menu.add_feature("Spawn Boat","action",main_menu.id,function(
         vehicle.set_vehicle_colors(boat_veh, 12, 141)
         vehicle.set_vehicle_extra_colors(boat_veh, 62, 0)
         vehicle.set_vehicle_window_tint(boat_veh, 1)
+
+        if boat_radio_toggle.on then
+            native.call(0x3B988190C0AA6C0B, boat_veh, true)
+            native.call(0x1B9C0099CB942AC6, boat_veh, radio_stations[boat_radio.value+1].id)
+        else
+            native.call(0x3B988190C0AA6C0B, boat_veh, false)
+        end
 
         if entity.is_an_entity(boat_veh) then
             blips.boat_veh = ui.add_blip_for_entity(boat_veh)
@@ -225,13 +308,33 @@ local spawn_boat = menu.add_feature("Spawn Boat","action",main_menu.id,function(
     end
 end)
 
+local boat_speed = menu.add_feature("Speed = [20.0]", "action", main_menu.id, function(ft)
+    local status = 1
+    local temp_speed
+    while status == 1 do
+        status, temp_speed = input.get("Speed Input","",15,3)
+        system.yield(0)
+    end
+    temp_speed = temp_speed..".0"
+    vehicle_speed = tonumber(temp_speed)
+
+    ft.name = "Speed = ["..vehicle_speed.."]"
+    
+    if is_boat_active then
+        menu.notify("Speed updated to "..vehicle_speed,"Updated Speed", nil, 0x00FF00)
+        native.call(0x5C9B84BD7D31D908, boat_ped, vehicle_speed)
+        native.call(0x404A5AA9B9F0B746, boat_ped, vehicle_speed)
+    end
+end)
+boat_speed.hint = "Choose the speed of the boat. Default is 20.0"
+
 local autpilot_wp = menu.add_feature("Autopilot to WP","action",main_menu.id, function()
     if entity.is_an_entity(boat_veh) and entity.is_an_entity(boat_ped) then
         is_boat_active = true
         local wp = ui.get_waypoint_coord()
 
         native.call(0x75DBEC174AEEAD10, boat_veh, false)
-        ai.task_vehicle_drive_to_coord(boat_ped, boat_veh, v3(wp.x, wp.y, 0.0), vehicle_speed, 0, 0, drive_mode, 60, 0)
+        ai.task_vehicle_drive_to_coord(boat_ped, boat_veh, v3(wp.x, wp.y, 0.0), vehicle_speed, 0, 0, drive_mode, 30, 0)
 
         native.call(0x1913FE4CBF41C463, boat_ped, 255, true)
         native.call(0x1913FE4CBF41C463, boat_ped, 251, true)
@@ -244,7 +347,8 @@ local autpilot_wp = menu.add_feature("Autopilot to WP","action",main_menu.id, fu
 
             local hori_dist = dist_x+dist_y
             system.yield(0)
-            if hori_dist < 70 then
+            if hori_dist < 35 then
+                menu.notify("Arrived to Dest!","Arrived",nil,0x00FF00)
                 repeat
                     system.yield(0)
                 until entity.get_entity_speed(boat_veh) < 1 or not entity.is_an_entity(boat_veh)
@@ -257,6 +361,10 @@ local autpilot_wp = menu.add_feature("Autopilot to WP","action",main_menu.id, fu
         native.call(0x75DBEC174AEEAD10, boat_veh, true)
 
         ai.task_enter_vehicle(boat_ped, boat_veh, 10000, driver_alt_seat, 1, 1, 0)
+        repeat
+            system.yield(0)
+        until vehicle.get_ped_in_vehicle_seat(boat_veh or 0, -1) ~= boat_ped
+        vehicle.set_vehicle_engine_on(boat_veh, true, true, false)
         is_boat_active = false
     end
 end)
