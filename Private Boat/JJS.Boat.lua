@@ -328,14 +328,23 @@ local boat_speed = menu.add_feature("Speed = [20.0]", "action", main_menu.id, fu
 end)
 boat_speed.hint = "Choose the speed of the boat. Default is 20.0"
 
-local autpilot_wp = menu.add_feature("Autopilot to WP","action",main_menu.id, function()
+local autopilot_menu = menu.add_feature("Autopilot","parent",main_menu.id)
+
+local autopilot_mode = menu.add_feature("Mode","autoaction_value_str",autopilot_menu.id)
+autopilot_mode:set_str_data({"Pathed","Dynamic"})
+
+local autopilot_wp = menu.add_feature("Autopilot to WP","action",autopilot_menu.id, function()
     if entity.is_an_entity(boat_veh) and entity.is_an_entity(boat_ped) then
         is_boat_active = true
         local wp = ui.get_waypoint_coord()
 
         native.call(0x75DBEC174AEEAD10, boat_veh, false)
-        --ai.task_vehicle_drive_to_coord(boat_ped, boat_veh, v3(wp.x, wp.y, 0.0), vehicle_speed, 0, 0, drive_mode, 30, 0)
-        native.call(0x15C86013127CE63F, boat_ped, boat_veh, 0, 0, wp.x, wp.y, 0.0, 4, vehicle_speed, drive_mode, 30, 7)
+
+        if autopilot_mode.value == 0 then
+            ai.task_vehicle_drive_to_coord(boat_ped, boat_veh, v3(wp.x, wp.y, 0.0), vehicle_speed, 0, 0, drive_mode, 30, 0)
+        elseif autopilot_mode.value == 1 then
+            native.call(0x15C86013127CE63F, boat_ped, boat_veh, 0, 0, wp.x, wp.y, 0.0, 4, vehicle_speed, drive_mode, 60, 7)
+        end
 
         repeat
             system.yield(0)
@@ -352,7 +361,10 @@ local autpilot_wp = menu.add_feature("Autopilot to WP","action",main_menu.id, fu
 
             local hori_dist = dist_x+dist_y
             system.yield(0)
-            if hori_dist < 35 then
+            if hori_dist < 50 then
+                if autopilot_mode.value == 1 then
+                    native.call(0x15C86013127CE63F, boat_ped, boat_veh, 0, 0, wp.x, wp.y, 0.0, 4, 0.2, drive_mode, 60, 7)
+                end
                 menu.notify("Arrived to Dest!","Arrived",nil,0x00FF00)
                 repeat
                     system.yield(0)
