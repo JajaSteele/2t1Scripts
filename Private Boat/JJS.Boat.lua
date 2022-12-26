@@ -396,8 +396,8 @@ local function goto_wp()
 
         repeat
             system.yield(0)
-        until vehicle.get_ped_in_vehicle_seat(boat_veh or 0, -1) ~= boat_ped
-        vehicle.set_vehicle_engine_on(boat_veh, true, true, false)
+        until ped.get_vehicle_ped_is_using(boat_ped) ~= boat_veh
+        vehicle.set_vehicle_engine_on(boat_veh, false, true, false)
         is_boat_active = false
         clear_ap = false
     end
