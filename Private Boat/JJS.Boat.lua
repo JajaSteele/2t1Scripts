@@ -107,6 +107,7 @@ local drive_mode_direct = 21758525
 local blips = {}
 local boat_ped
 local boat_veh
+local boat_jetskis = {}
 
 local driver_alt_seat = 0
 
@@ -114,6 +115,13 @@ local is_boat_active = false
 local clearing = false
 local clear_ap = false
 
+local function clear_jetskis()
+    for k,v in pairs(boat_jetskis) do
+        request_control(v)
+        entity.delete_entity(v)
+        boat_jetskis[k] = nil
+    end
+end
 
 local function clear_all_noyield(delay)
     if delay and type(delay) == "number" then
@@ -128,6 +136,8 @@ local function clear_all_noyield(delay)
     entity.delete_entity(boat_ped or 0)
 
     entity.delete_entity(boat_veh or 0)
+
+    clear_jetskis()
 
     is_boat_active = false
     
@@ -442,6 +452,24 @@ local clean_boat = menu.add_feature("Clear All","action",main_menu.id,function()
     clearing = true
 end)
 clean_boat.hint = "Clean up boat + driver (Might take a while before being inactive)"
+
+local spawn_menu = menu.add_feature("Jetski Menu","parent",main_menu.id)
+
+local spawn_jetski = menu.add_feature("Spawn Jetski","action",spawn_menu.id,function()
+    if entity.is_an_entity(boat_veh or 0) then
+        local boat_heading = entity.get_entity_heading(boat_veh)
+        local boat_pos = entity.get_entity_coords(boat_veh)
+
+        local spawn_pos = front_of_pos(boat_pos,v3(0,0,boat_heading),-16)
+        local jetski_hash = gameplay.get_hash_key("seashark")
+        request_model(jetski_hash)
+        boat_jetskis[#boat_jetskis+1] = vehicle.create_vehicle(jetski_hash, spawn_pos, boat_heading+180, true, false)
+    end
+end)
+spawn_jetski.hint = "Spawns a jetski at the back of the boat"
+
+local clear_jetski = menu.add_feature("Clear Jetskis","action",spawn_menu.id,clear_jetskis)
+clear_jetski.hint = "Remove all the jetskis"
 
 menu.create_thread(function()
     while true do
