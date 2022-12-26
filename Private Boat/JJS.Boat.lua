@@ -386,7 +386,14 @@ local function goto_wp()
         end
         native.call(0x75DBEC174AEEAD10, boat_veh, true)
 
-        ai.task_enter_vehicle(boat_ped, boat_veh, 10000, driver_alt_seat, 1, 1, 0)
+        local seat_count = vehicle.get_vehicle_model_number_of_seats(vehicle_hash)
+        
+        if seat_count > 1 then
+            ai.task_enter_vehicle(boat_ped, boat_veh, 10000, driver_alt_seat, 1, 1, 0)
+        else
+            ai.task_leave_vehicle(boat_ped, boat_veh, 64)
+        end
+
         repeat
             system.yield(0)
         until vehicle.get_ped_in_vehicle_seat(boat_veh or 0, -1) ~= boat_ped
