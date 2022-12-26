@@ -280,6 +280,9 @@ local spawn_boat = menu.add_feature("Spawn Boat","action",main_menu.id,function(
         vehicle.set_vehicle_extra_colors(boat_veh, 62, 0)
         vehicle.set_vehicle_window_tint(boat_veh, 1)
 
+        native.call(0x8821196D91FA2DE5, boat_veh, true)
+        native.call(0x34E710FF01247C5A, boat_veh, 2)
+
         if boat_radio_toggle.on then
             native.call(0x3B988190C0AA6C0B, boat_veh, true)
             native.call(0x1B9C0099CB942AC6, boat_veh, radio_stations[boat_radio.value+1].id)
@@ -415,6 +418,7 @@ local function goto_wp()
             system.yield(0)
         until ped.get_vehicle_ped_is_using(boat_ped) ~= boat_veh
         vehicle.set_vehicle_engine_on(boat_veh, false, true, false)
+
         is_boat_active = false
         clear_ap = false
     end
