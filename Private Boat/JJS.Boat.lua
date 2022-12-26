@@ -99,7 +99,7 @@ end
 
 local vehicle_hash = gameplay.get_hash_key("marquis")
 local vehicle_name = "marquis"
-local ped_hash = 988062523
+local ped_hash = 3361671816
 local vehicle_speed = 20.0
 local drive_mode = 61
 local drive_mode_direct = 21758525
