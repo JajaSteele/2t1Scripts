@@ -351,8 +351,10 @@ local function goto_wp()
         is_boat_active = true
         local wp = ui.get_waypoint_coord()
 
+        request_control(boat_veh)
         native.call(0x75DBEC174AEEAD10, boat_veh, false)
 
+        request_control(boat_ped)
         if autopilot_mode.value == 0 then
             ai.task_vehicle_drive_to_coord_longrange(boat_ped, boat_veh, v3(wp.x, wp.y, 0.0), vehicle_speed, drive_mode, 30)
         elseif autopilot_mode.value == 1 then
@@ -365,6 +367,7 @@ local function goto_wp()
             system.yield(0)
         until vehicle.get_ped_in_vehicle_seat(boat_veh or 0, -1) == boat_ped or clear_ap
 
+        request_control(boat_ped)
         native.call(0x1913FE4CBF41C463, boat_ped, 255, true)
         native.call(0x1913FE4CBF41C463, boat_ped, 251, true)
 
@@ -377,6 +380,8 @@ local function goto_wp()
             local hori_dist = dist_x+dist_y
             system.yield(0)
             if hori_dist < 50 then
+                request_control(boat_ped)
+                request_control(boat_veh)
                 if autopilot_mode.value == 0 then
                     ai.task_vehicle_drive_to_coord(boat_ped, boat_veh, v3(wp.x, wp.y, 0.0), 0.2, 0, 0, drive_mode, 30, 0)
                 elseif autopilot_mode.value == 1 then
@@ -394,11 +399,13 @@ local function goto_wp()
                 break
             end
         end
+        request_control(boat_veh)
         native.call(0x75DBEC174AEEAD10, boat_veh, true)
 
         local seat_count = vehicle.get_vehicle_model_number_of_seats(vehicle_hash)
         
         if seat_count > 1 then
+            request_control(boat_ped)
             ai.task_enter_vehicle(boat_ped, boat_veh, 10000, driver_alt_seat, 1, 1, 0)
         else
             ai.task_leave_vehicle(boat_ped, boat_veh, 64)
@@ -414,7 +421,7 @@ local function goto_wp()
 end
 
 local autopilot_wp = menu.add_feature("Autopilot to WP","action",autopilot_menu.id, goto_wp)
-autopilot_wp.hint = "Will try to go to waypoint, seems to stop working if far from coast\nAlso will get stuck very easily, GTA ai sucks for boats.."
+autopilot_wp.hint = "Will try to go to waypoint, seems to stop working if far from coast\nAlso will get stuck very easily, GTA ai sucks for boats..\nBeing near a yacht (and maybe near a kosatka?) will make it act strangely."
 
 local autopilot_clear = menu.add_feature("Clear Autopilot","action",autopilot_menu.id, function()
     if is_boat_active then
