@@ -47,6 +47,7 @@ jobs:
             ./Avenger utils/JJS.Avenger.Utils.lua
             ./Airtaxi Script/JJS.Airtaxi.lua
             ./Cargobob/JJS.Cargobob.lua
+            ./Private Boat/JJS.Boat.lua
 
 
 
