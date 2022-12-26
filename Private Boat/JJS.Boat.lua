@@ -101,7 +101,8 @@ local vehicle_hash = gameplay.get_hash_key("marquis")
 local vehicle_name = "marquis"
 local ped_hash = 988062523
 local vehicle_speed = 20.0
-local drive_mode = 787005
+local drive_mode = 61
+local drive_mode_direct = 21758525
 
 local blips = {}
 local boat_ped
@@ -111,6 +112,7 @@ local driver_alt_seat = 0
 
 local is_boat_active = false
 local clearing = false
+local clear_ap = false
 
 
 local function clear_all_noyield(delay)
@@ -331,9 +333,10 @@ boat_speed.hint = "Choose the speed of the boat. Default is 20.0"
 local autopilot_menu = menu.add_feature("Autopilot","parent",main_menu.id)
 
 local autopilot_mode = menu.add_feature("Mode","autoaction_value_str",autopilot_menu.id)
-autopilot_mode:set_str_data({"Pathed","Dynamic"})
+autopilot_mode:set_str_data({"Pathed","Dynamic","Direct"})
+autopilot_mode.hint = "Change which method is used for driving the boat.\n'Direct' will not avoid any objects!"
 
-local autopilot_wp = menu.add_feature("Autopilot to WP","action",autopilot_menu.id, function()
+local function goto_wp()
     if entity.is_an_entity(boat_veh) and entity.is_an_entity(boat_ped) then
         is_boat_active = true
         local wp = ui.get_waypoint_coord()
@@ -341,14 +344,16 @@ local autopilot_wp = menu.add_feature("Autopilot to WP","action",autopilot_menu.
         native.call(0x75DBEC174AEEAD10, boat_veh, false)
 
         if autopilot_mode.value == 0 then
-            ai.task_vehicle_drive_to_coord(boat_ped, boat_veh, v3(wp.x, wp.y, 0.0), vehicle_speed, 0, 0, drive_mode, 30, 0)
+            ai.task_vehicle_drive_to_coord_longrange(boat_ped, boat_veh, v3(wp.x, wp.y, 0.0), vehicle_speed, drive_mode, 30)
         elseif autopilot_mode.value == 1 then
             native.call(0x15C86013127CE63F, boat_ped, boat_veh, 0, 0, wp.x, wp.y, 0.0, 4, vehicle_speed, drive_mode, 60, 7)
+        elseif autopilot_mode.value == 2 then
+            ai.task_vehicle_drive_to_coord_longrange(boat_ped, boat_veh, v3(wp.x, wp.y, 0.0), vehicle_speed, drive_mode_direct, 30)
         end
 
         repeat
             system.yield(0)
-        until vehicle.get_ped_in_vehicle_seat(boat_veh or 0, -1) == boat_ped
+        until vehicle.get_ped_in_vehicle_seat(boat_veh or 0, -1) == boat_ped or clear_ap
 
         native.call(0x1913FE4CBF41C463, boat_ped, 255, true)
         native.call(0x1913FE4CBF41C463, boat_ped, 251, true)
@@ -362,16 +367,20 @@ local autopilot_wp = menu.add_feature("Autopilot to WP","action",autopilot_menu.
             local hori_dist = dist_x+dist_y
             system.yield(0)
             if hori_dist < 50 then
-                if autopilot_mode.value == 1 then
+                if autopilot_mode.value == 0 then
+                    ai.task_vehicle_drive_to_coord(boat_ped, boat_veh, v3(wp.x, wp.y, 0.0), 0.2, 0, 0, drive_mode, 30, 0)
+                elseif autopilot_mode.value == 1 then
                     native.call(0x15C86013127CE63F, boat_ped, boat_veh, 0, 0, wp.x, wp.y, 0.0, 4, 0.2, drive_mode, 60, 7)
+                elseif autopilot_mode.value == 2 then
+                    ai.task_vehicle_drive_to_coord(boat_ped, boat_veh, v3(wp.x, wp.y, 0.0), 0.2, 0, 0, drive_mode_direct, 30, 0)
                 end
                 menu.notify("Arrived to Dest!","Arrived",nil,0x00FF00)
                 repeat
                     system.yield(0)
-                until entity.get_entity_speed(boat_veh) < 1 or not entity.is_an_entity(boat_veh)
+                until entity.get_entity_speed(boat_veh) < 1 or not entity.is_an_entity(boat_veh) or clear_ap
                 break
             end
-            if not entity.is_an_entity(boat_veh) then
+            if not entity.is_an_entity(boat_veh) or clear_ap then
                 break
             end
         end
@@ -383,8 +392,43 @@ local autopilot_wp = menu.add_feature("Autopilot to WP","action",autopilot_menu.
         until vehicle.get_ped_in_vehicle_seat(boat_veh or 0, -1) ~= boat_ped
         vehicle.set_vehicle_engine_on(boat_veh, true, true, false)
         is_boat_active = false
+        clear_ap = false
+    end
+end
+
+local autopilot_wp = menu.add_feature("Autopilot to WP","action",autopilot_menu.id, goto_wp)
+autopilot_wp.hint = "Will try to go to waypoint, seems to stop working if far from coast\nAlso will get stuck very easily, GTA ai sucks for boats.."
+
+local autopilot_clear = menu.add_feature("Clear Autopilot","action",autopilot_menu.id, function()
+    if is_boat_active then
+        clear_ap = true
     end
 end)
+
+local seat_data = {}
+
+local enter_seat
+
+local enter_seat_menu = menu.add_feature("Enter Seat","parent",main_menu.id,function()
+    request_model(vehicle_hash)
+    local seat_counts = vehicle.get_vehicle_model_number_of_seats(vehicle_hash)
+    seat_data = {}
+    for i1=1, seat_counts do
+        seat_data[i1] = tostring(i1-2)
+        system.yield(0)
+    end
+    enter_seat:set_str_data(seat_data)
+end)
+
+enter_seat = menu.add_feature("Enter Seat","action_value_str",enter_seat_menu.id,function(ft)
+    local local_player = player.player_id()
+    local player_pos = player.get_player_coords(local_player)
+    local player_ped = player.get_player_ped(local_player)
+    if entity.is_an_entity(boat_veh) then
+        ai.task_enter_vehicle(player_ped, boat_veh, 10000, ft.value-1, 1, 1, 0)
+    end
+end)
+enter_seat.hint = "GTA is weird with boats so you can't always enter the other seats, this should help!"
 
 local clean_boat = menu.add_feature("Clear All","action",main_menu.id,function()
     clear_all(nil,true,true,false)
