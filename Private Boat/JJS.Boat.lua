@@ -230,7 +230,7 @@ local boat_select = menu.add_feature("Boat Model = [marquis]","action",main_menu
 
     ft.name = "Boat Model = ["..vehicle_name.."]"
 end)
-boat_select.hint = "Set the model for your boat."
+boat_select.hint = "Set the model for your boat.\nDefault is 'marquis'"
 
 local radio_menu = menu.add_feature("Radio","parent",main_menu.id)
 radio_menu.hint = "Unfortunately this only works if you're in a passenger seat/driving it :C"
