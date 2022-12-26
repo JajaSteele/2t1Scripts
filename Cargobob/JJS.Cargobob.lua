@@ -419,7 +419,7 @@ local spawn_cargo = menu.add_feature("Spawn Cargobob","action",main_menu.id, fun
 
     request_control(heli_veh)
     request_control(heli_ped)
-    native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z+vehicle_dropheight, 4, 10.0, 5.0, curr_heli_heading, 100, 1, 30.0, 1)
+    native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z+vehicle_dropheight, 4, 10.0, 5.0, curr_heli_heading, 100, 1, 5.0, 1)
 
     repeat
         local heli_pos_live = entity.get_entity_coords(heli_veh)
@@ -447,6 +447,7 @@ local spawn_cargo = menu.add_feature("Spawn Cargobob","action",main_menu.id, fun
     end
     request_control(heli_veh)
     request_control(heli_ped)
+    request_control(player_veh)
     if magnet_mode.on then
         native.call(0x9A665550F8DA349B, heli_veh, false)
     else
@@ -454,8 +455,11 @@ local spawn_cargo = menu.add_feature("Spawn Cargobob","action",main_menu.id, fun
         native.call(0xADF7BE450512C12F, player_veh)
     end
     
+    request_control(player_veh)
     entity.set_entity_as_mission_entity(player_veh, false, false)
 
+    request_control(heli_veh)
+    request_control(heli_ped)
     native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z+vehicle_dropheight+100, 4, 90.0, 50.0, curr_heli_heading, 200, 5, 1.0, 1)
 
     yield(3000)
