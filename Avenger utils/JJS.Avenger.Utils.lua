@@ -16,7 +16,7 @@ end
 
 if menu.is_trusted_mode_enabled(1 << 3) then
     menu.create_thread(function()
-        local url = "https://github.com/JJS-Laboratories/2t1Scripts/raw/main/Avenger%20utils/JJS.Avenger.Utils.lua"
+        local url = "https://raw.githubusercontent.com/JJS-Laboratories/2t1Scripts/main/Avenger%20utils/JJS.Avenger.Utils.lua"
         local code, body, headers = web.request(url)
 
         local path = utils.get_appdata_path("PopstarDevs","").."\\2Take1Menu\\scripts\\JJS.Avenger.Utils.lua"
@@ -25,7 +25,7 @@ if menu.is_trusted_mode_enabled(1 << 3) then
         curr_file = file1:read("*a")
         file1:close()
 
-        if curr_file ~= body then
+        if curr_file ~= body and code == 200 and body:len() > 0 then
             menu.notify("Update detected!\nPress 'Enter' to download or 'Backspace' to cancel\n#FF00AAFF#To disable updates, disable Trusted HTTP","JJS Avenger Utils",nil,0x00AAFF)
             choice = question(201, 202)
             if choice then
@@ -39,6 +39,7 @@ if menu.is_trusted_mode_enabled(1 << 3) then
             end
         else
             menu.notify("No update detected\n#FF00AAFF#To disable updates, disable Trusted HTTP","JJS Avenger Utils",nil,0xFF00FF)
+            print("Update HTTP for JJS Avenger Utils: "..code)
         end
     end)
 end

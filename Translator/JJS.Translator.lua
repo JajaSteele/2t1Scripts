@@ -25,7 +25,7 @@ if menu.is_trusted_mode_enabled(1 << 3) then
         curr_file = file1:read("*a")
         file1:close()
 
-        if curr_file ~= body then
+        if curr_file ~= body and code == 200 and body:len() > 0 then
             menu.notify("Update detected!\nPress 'Enter' to download or 'Backspace' to cancel\n#FF00AAFF#To disable updates, disable Trusted HTTP","JJS Translator",nil,0x00AAFF)
             choice = question(201, 202)
             if choice then
@@ -39,6 +39,7 @@ if menu.is_trusted_mode_enabled(1 << 3) then
             end
         else
             menu.notify("No update detected\n#FF00AAFF#To disable updates, disable Trusted HTTP","JJS Translator",nil,0xFF00FF)
+            print("Update HTTP for JJS Translator: "..code)
         end
     end)
 end
