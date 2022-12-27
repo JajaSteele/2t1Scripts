@@ -57,7 +57,7 @@ jobs:
             ./Airtaxi Script/JJS.Airtaxi.lua
             ./Cargobob/JJS.Cargobob.lua
             ./Private Boat/JJS.Boat.lua
-            ./pack.zip
+            pack.zip
 
 
 
