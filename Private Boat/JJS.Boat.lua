@@ -371,7 +371,7 @@ boat_speed.hint = "Choose the speed of the boat. Default is 20.0"
 local autopilot_menu = menu.add_feature("Autopilot","parent",main_menu.id)
 
 local autopilot_mode = menu.add_feature("Mode","autoaction_value_str",autopilot_menu.id)
-autopilot_mode:set_str_data({"Pathed","Dynamic","Direct"})
+autopilot_mode:set_str_data({"Pathed","Direct"})
 autopilot_mode.hint = "Change which method is used for driving the boat.\n'Direct' will not avoid any objects!"
 
 local function goto_wp()
@@ -395,8 +395,6 @@ local function goto_wp()
         if autopilot_mode.value == 0 then
             ai.task_vehicle_drive_to_coord_longrange(boat_ped, boat_veh, v3(wp.x, wp.y, 0.0), vehicle_speed, drive_mode, 30)
         elseif autopilot_mode.value == 1 then
-            native.call(0x15C86013127CE63F, boat_ped, boat_veh, 0, 0, wp.x, wp.y, 0.0, 4, vehicle_speed, drive_mode, 60, 7)
-        elseif autopilot_mode.value == 2 then
             dest_ent = object.create_object(dest_ent_hash, v3(wp.x, wp.y, 0.0), true, true)
             native.call(0x1F4ED342ACEFE62D, dest_ent, true, true)
             ai.task_vehicle_follow(boat_ped, boat_veh, dest_ent, vehicle_speed, drive_mode_direct, 30)
@@ -424,8 +422,6 @@ local function goto_wp()
                 if autopilot_mode.value == 0 then
                     ai.task_vehicle_drive_to_coord(boat_ped, boat_veh, v3(wp.x, wp.y, 0.0), 0.2, 0, 0, drive_mode, 30, 0)
                 elseif autopilot_mode.value == 1 then
-                    native.call(0x15C86013127CE63F, boat_ped, boat_veh, 0, 0, wp.x, wp.y, 0.0, 4, 0.2, drive_mode, 60, 7)
-                elseif autopilot_mode.value == 2 then
                     request_control(dest_ent)
                     native.call(0xDE564951F95E09ED, dest_ent, true, true)
                     system.yield(2000)
