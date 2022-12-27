@@ -452,7 +452,7 @@ local function goto_wp()
 
         repeat
             system.yield(0)
-        until ped.get_vehicle_ped_is_using(boat_ped) ~= boat_veh
+        until ped.get_vehicle_ped_is_using(boat_ped) ~= boat_veh or clear_ap
         if boat_radio_toggle.on then
             vehicle.set_vehicle_engine_on(boat_veh, true, true, false)
         else
