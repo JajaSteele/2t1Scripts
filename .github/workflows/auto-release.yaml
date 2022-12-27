@@ -9,11 +9,28 @@ on:
   workflow_dispatch:
 
 jobs:
+  zip-files:
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v2
+        - uses: vimtor/action-zip@v1
+          with:
+            dest: pack.zip
+            files: | 
+            ./Airline Script/JJS.Airline.lua
+            ./Taxi Script/JJS.Taxi.lua
+            ./Translator/JJS.Translator.lua
+            ./Pet/JJS.Pet.lua
+            ./Avenger utils/JJS.Avenger.Utils.lua
+            ./Airtaxi Script/JJS.Airtaxi.lua
+            ./Cargobob/JJS.Cargobob.lua
+            ./Private Boat/JJS.Boat.lua
   auto-release:
     name: "Latest Release"
     runs-on: "ubuntu-latest"
     steps:
       - uses: actions/checkout@v3
+      
 
       - name: Delete tag and release
         id: delete_release
@@ -48,6 +65,7 @@ jobs:
             ./Airtaxi Script/JJS.Airtaxi.lua
             ./Cargobob/JJS.Cargobob.lua
             ./Private Boat/JJS.Boat.lua
+            ./pack.zip
 
 
 
