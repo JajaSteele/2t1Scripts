@@ -101,14 +101,16 @@ end
 local vehicle_hash = gameplay.get_hash_key("marquis")
 local vehicle_name = "marquis"
 local ped_hash = 3361671816
+local dest_ent_hash = 455567202
 local vehicle_speed = 20.0
 local drive_mode = 61
-local drive_mode_direct = 21758525
+local drive_mode_direct = 16777277
 
 local blips = {}
 local boat_ped
 local boat_veh
 local boat_jetskis = {}
+local dest_ent = 0
 
 local driver_alt_seat = 0
 
@@ -137,6 +139,9 @@ local function clear_all_noyield(delay)
     entity.delete_entity(boat_ped or 0)
 
     entity.delete_entity(boat_veh or 0)
+
+    entity.delete_entity(dest_ent or 0)
+
 
     clear_jetskis()
 
@@ -186,6 +191,19 @@ local function clear_all(delay,peds,vehicle,reset)
                 system.yield(0)
             until not entity.is_an_entity(boat_veh) or attempts > 30
             boat_veh = 0
+        end
+    end)
+
+    menu.create_thread(function()
+        local attempts = 0
+        if dest_ent ~= nil then
+            repeat
+                request_control(dest_ent)
+                entity.delete_entity(dest_ent)
+                attempts = attempts+1
+                system.yield(0)
+            until not entity.is_an_entity(dest_ent) or attempts > 30
+            dest_ent = 0
         end
     end)
 
@@ -276,6 +294,8 @@ local spawn_boat = menu.add_feature("Spawn Boat","action",main_menu.id,function(
         request_model(vehicle_hash)
         boat_veh = vehicle.create_vehicle(vehicle_hash, spawn_pos, player_heading, true, false)
 
+        native.call(0x1F4ED342ACEFE62D, boat_veh, true, true)
+
         vehicle.set_vehicle_mod_kit_type(boat_veh, 0)
         vehicle.set_vehicle_colors(boat_veh, 12, 141)
         vehicle.set_vehicle_extra_colors(boat_veh, 62, 0)
@@ -305,6 +325,8 @@ local spawn_boat = menu.add_feature("Spawn Boat","action",main_menu.id,function(
 
         request_model(ped_hash)
         boat_ped = ped.create_ped(0, ped_hash, spawn_pos, 0, true, false)
+
+        native.call(0x1F4ED342ACEFE62D, boat_ped, true, true)
 
         local seat_count = vehicle.get_vehicle_model_number_of_seats(vehicle_hash)
         if seat_count > 2 then
@@ -357,6 +379,15 @@ local function goto_wp()
         is_boat_active = true
         local wp = ui.get_waypoint_coord()
 
+        blips.dest = ui.add_blip_for_coord(v3(wp.x, wp.y, 0.0))
+        ui.set_blip_sprite(blips.dest, 58)
+        ui.set_blip_colour(blips.dest, 5)
+
+        native.call(0xF9113A30DE5C6670, "STRING")
+        native.call(0x6C188BE134E074AA, "Boat Destination")
+        native.call(0xBC38B49BCB83BC9B, blips.dest)
+
+
         request_control(boat_veh)
         native.call(0x75DBEC174AEEAD10, boat_veh, false)
 
@@ -366,7 +397,9 @@ local function goto_wp()
         elseif autopilot_mode.value == 1 then
             native.call(0x15C86013127CE63F, boat_ped, boat_veh, 0, 0, wp.x, wp.y, 0.0, 4, vehicle_speed, drive_mode, 60, 7)
         elseif autopilot_mode.value == 2 then
-            ai.task_vehicle_drive_to_coord_longrange(boat_ped, boat_veh, v3(wp.x, wp.y, 0.0), vehicle_speed, drive_mode_direct, 30)
+            dest_ent = object.create_object(dest_ent_hash, v3(wp.x, wp.y, 0.0), true, true)
+            native.call(0x1F4ED342ACEFE62D, dest_ent, true, true)
+            ai.task_vehicle_follow(boat_ped, boat_veh, dest_ent, vehicle_speed, drive_mode_direct, 30)
         end
 
         repeat
@@ -393,7 +426,11 @@ local function goto_wp()
                 elseif autopilot_mode.value == 1 then
                     native.call(0x15C86013127CE63F, boat_ped, boat_veh, 0, 0, wp.x, wp.y, 0.0, 4, 0.2, drive_mode, 60, 7)
                 elseif autopilot_mode.value == 2 then
-                    ai.task_vehicle_drive_to_coord(boat_ped, boat_veh, v3(wp.x, wp.y, 0.0), 0.2, 0, 0, drive_mode_direct, 30, 0)
+                    request_control(dest_ent)
+                    native.call(0xDE564951F95E09ED, dest_ent, true, true)
+                    system.yield(2000)
+                    request_control(dest_ent)
+                    entity.delete_entity(dest_ent)
                 end
                 menu.notify("Arrived to Dest!","Arrived",nil,0x00FF00)
                 repeat
@@ -424,6 +461,8 @@ local function goto_wp()
 
         is_boat_active = false
         clear_ap = false
+        ui.remove_blip(blips.dest or 0)
+        blips.dest = nil
     end
 end
 
@@ -434,6 +473,10 @@ local autopilot_clear = menu.add_feature("Clear Autopilot","action",autopilot_me
     if is_boat_active then
         clear_ap = true
     end
+    ui.remove_blip(blips.dest or 0)
+    blips.dest = nil
+    request_control(dest_ent)
+    entity.delete_entity(dest_ent)
 end)
 
 local seat_data = {}
@@ -456,7 +499,7 @@ enter_seat = menu.add_feature("Enter Seat","action_value_str",enter_seat_menu.id
     local player_pos = player.get_player_coords(local_player)
     local player_ped = player.get_player_ped(local_player)
     if entity.is_an_entity(boat_veh) then
-        ai.task_enter_vehicle(player_ped, boat_veh, 10000, ft.value-1, 1, 1, 0)
+        ai.task_enter_vehicle(player_ped, boat_veh, 10000, ft.value-1, 2, 1, 0)
     end
 end)
 enter_seat.hint = "GTA is weird with boats so you can't always enter the other seats, this should help!"
