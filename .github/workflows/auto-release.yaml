@@ -14,6 +14,16 @@ jobs:
     runs-on: "ubuntu-latest"
     steps:
       - uses: actions/checkout@v3
+      
+      - uses: superjaja05/action-zip@v1
+        with:
+          dest: pack.zip
+          files: ./Airline Script/JJS.Airline.lua | ./Taxi Script/JJS.Taxi.lua|./Translator/JJS.Translator.lua | ./Pet/JJS.Pet.lua | ./Avenger utils/JJS.Avenger.Utils.lua | ./Airtaxi Script/JJS.Airtaxi.lua | ./Cargobob/JJS.Cargobob.lua | ./Private Boat/JJS.Boat.lua
+          
+      - uses: actions/upload-artifact@v1
+        with:
+          name: script-pack
+          path: ${{ github.workspace }}/pack.zip
 
       - name: Delete tag and release
         id: delete_release
