@@ -16,15 +16,7 @@ jobs:
         - uses: vimtor/action-zip@v1
           with:
             dest: pack.zip
-            files: | 
-            ./Airline Script/JJS.Airline.lua
-            ./Taxi Script/JJS.Taxi.lua
-            ./Translator/JJS.Translator.lua
-            ./Pet/JJS.Pet.lua
-            ./Avenger utils/JJS.Avenger.Utils.lua
-            ./Airtaxi Script/JJS.Airtaxi.lua
-            ./Cargobob/JJS.Cargobob.lua
-            ./Private Boat/JJS.Boat.lua
+            files: ./Airline Script/JJS.Airline.lua ./Taxi Script/JJS.Taxi.lua ./Translator/JJS.Translator.lua ./Pet/JJS.Pet.lua ./Avenger utils/JJS.Avenger.Utils.lua ./Airtaxi Script/JJS.Airtaxi.lua ./Cargobob/JJS.Cargobob.lua ./Private Boat/JJS.Boat.lua
   auto-release:
     name: "Latest Release"
     runs-on: "ubuntu-latest"
