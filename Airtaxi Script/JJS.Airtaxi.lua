@@ -68,6 +68,7 @@ local vehicle_hash = gameplay.get_hash_key("swift2")
 local vehicle_name = "swift2"
 local vehicle_speed = 90.0
 local ped_hash = 988062523
+local flight_height = 70
 
 local blips = {}
 local heli_ped
@@ -275,6 +276,20 @@ local heli_hoveratdest = menu.add_feature("Keep Hovering", "toggle", main_menu.i
 end)
 heli_hoveratdest.hint = "If enabled the heli won't land, and instead will hover above the destination."
 
+local heli_height = menu.add_feature("Hover Height = [70.0]", "action", main_menu.id, function(ft)
+    local status = 1
+    local temp_height
+    while status == 1 do
+        status, temp_height = input.get("Height above Ground","",15,3)
+        system.yield(0)
+    end
+    temp_height = temp_height..".0"
+    flight_height = tonumber(temp_height)
+
+    ft.name = "Hover Height = ["..flight_height.."]"
+end)
+heli_height.hint = "Choose the height at which the vehicle will be dropped, Default is 15"
+
 local heli_rappeldown = menu.add_feature("Rappel at Dest", "toggle", main_menu.id, function(ft)
     if not can_rappel(vehicle_name) then
         menu.notify("Error! The selected helicopter cannot rappel.","ERROR",nil,0x0000FF)
@@ -467,7 +482,7 @@ local spawn_heli = menu.add_feature("Spawn Heli", "action", main_menu.id, functi
     local wp = ui.get_waypoint_coord()
     local wpz = get_ground(wp)
 
-    local wp3 = v3(wp.x, wp.y, wpz+100)
+    local wp3 = v3(wp.x, wp.y, wpz)
 
     notify("Flying to:\nX: "..wp3.x.." Y: "..wp3.y.." Z: "..wp3.z,"Flying to Dest",nil,0x00AAFF)
 
@@ -483,7 +498,7 @@ local spawn_heli = menu.add_feature("Spawn Heli", "action", main_menu.id, functi
     request_control(heli_veh)
     request_control(heli_ped)
     native.call(0xE1EF3C1216AFF2CD, heli_ped)
-    native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z, 4, vehicle_speed, 50.0, -1, 100, 30, 200.0, 0)
+    native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z+100, 4, vehicle_speed, 50.0, -1, 100, 30, 200.0, 0)
 
     while true do
         local heli_pos_live = entity.get_entity_coords(heli_veh)
@@ -506,7 +521,7 @@ local spawn_heli = menu.add_feature("Spawn Heli", "action", main_menu.id, functi
     request_control(heli_veh)
     request_control(heli_ped)
     native.call(0xE1EF3C1216AFF2CD, heli_ped)
-    native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z, 4, 20.0, 10.0, -1, 50, 30, 75.0, 0)
+    native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z+flight_height, 4, 20.0, 10.0, -1, 50, 30, 75.0, 0)
 
     while true do
         local heli_pos_live = entity.get_entity_coords(heli_veh)
@@ -545,12 +560,12 @@ local spawn_heli = menu.add_feature("Spawn Heli", "action", main_menu.id, functi
         if heli_rappeldown.on and is_heli_active then
             request_control(heli_veh)
             request_control(heli_ped)
-            native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z-30, 4, 20.0, 50.0, -1, 100, 5, 400.0, 0)
-            native.call(0x09693B0312F91649, player_ped, 75)
+            native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z+flight_height, 4, 20.0, 50.0, -1, 100, 5, 400.0, 0)
+            native.call(0x09693B0312F91649, player_ped, flight_height+5)
         else
             request_control(heli_veh)
             request_control(heli_ped)
-            native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z+30, 4, 20.0, 50.0, -1, 100, 5, 400.0, 0)
+            native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z+flight_height, 4, 20.0, 50.0, -1, 100, 5, 400.0, 0)
         end
     end
 
