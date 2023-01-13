@@ -425,7 +425,7 @@ local spawn_heli = menu.add_feature("Spawn Heli", "action", main_menu.id, functi
 
     request_control(heli_veh)
     request_control(heli_ped)
-    native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, spawn_pos.x, spawn_pos.y, spawn_pos.z, 4, 50.0, 20.0, -1, 10, 10, 100.0, 32)
+    native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, spawn_pos.x, spawn_pos.y, spawn_pos.z, 4, 50.0, 20.0, -1, 10, 10, 100.0, 32+64)
 
     print("Heli ID: "..heli_veh)
     utils.to_clipboard(heli_veh)
@@ -529,7 +529,7 @@ local spawn_heli = menu.add_feature("Spawn Heli", "action", main_menu.id, functi
         request_control(heli_veh)
         request_control(heli_ped)
         native.call(0xE1EF3C1216AFF2CD, heli_ped)
-        native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z, 4, 40.0, 50.0, -1, 50, 30, 400.0, 32)
+        native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z, 4, 40.0, 50.0, -1, 50, 5, 1.0, 32+64)
 
         repeat
             system.yield(0)
