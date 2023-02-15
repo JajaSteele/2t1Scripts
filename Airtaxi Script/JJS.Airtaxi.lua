@@ -288,7 +288,7 @@ local heli_height = menu.add_feature("Hover Height = [70.0]", "action", main_men
 
     ft.name = "Hover Height = ["..flight_height.."]"
 end)
-heli_height.hint = "Choose the height at which the vehicle will be dropped, Default is 15"
+heli_height.hint = "Choose the height at which the vehicle will be dropped, Default is 70"
 
 local heli_rappeldown = menu.add_feature("Rappel at Dest", "toggle", main_menu.id, function(ft)
     if not can_rappel(vehicle_name) then
