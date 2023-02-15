@@ -254,6 +254,11 @@ for k,v in pairs(rappel_helis) do
     rappel_helis[k].id = gameplay.get_hash_key(v.name)
 end
 
+local rappel_hint_heli_list = ""
+for k,v in pairs(rappel_helis) do
+    rappel_hint_heli_list = rappel_hint_heli_list.."\n-"..v.name
+end
+
 local function can_rappel(name)
     local name_id = gameplay.get_hash_key(name)
     for k,v in pairs(rappel_helis) do
@@ -340,7 +345,7 @@ local heli_allowfront = menu.add_feature("Allow Front Passenger", "toggle", main
 end)
 heli_allowfront.hint = "Allows the player to enter front passenger seat"
 
-heli_rappeldown.hint = "If enabled, the script user #FF0000FF#(NOT other players)#DEFAULT# will rappel down.\n#FF0000FF#You NEED the 'Keep Hovering' option to be enabled too!"
+heli_rappeldown.hint = "If enabled, the script user #FF0000FF#(NOT other players)#DEFAULT# will rappel down.\n#FF0000FF#You NEED the 'Keep Hovering' option to be enabled too!\n#DEFAULT#List of compatible helis:\n"..rappel_hint_heli_list
 
 local heli_speed = menu.add_feature("Speed = [90]", "action", main_menu.id, function(ft)
     local status = 1
