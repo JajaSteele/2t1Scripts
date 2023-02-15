@@ -64,8 +64,8 @@ local function request_control(_ent)
     end
 end
 
-local vehicle_hash = gameplay.get_hash_key("swift2")
-local vehicle_name = "swift2"
+local vehicle_hash = gameplay.get_hash_key("supervolito")
+local vehicle_name = "supervolito"
 local vehicle_speed = 90.0
 local ped_hash = 988062523
 local flight_height = 70
@@ -301,7 +301,7 @@ local heli_rappeldown = menu.add_feature("Rappel at Dest", "toggle", main_menu.i
     heli_rappeldown2 = ft.on
 end)
 
-local heli_select = menu.add_feature("Heli Model = [swift2]","action",main_menu.id,function(ft)
+local heli_select = menu.add_feature("Heli Model = [supervolito]","action",main_menu.id,function(ft)
     local status = 1
     while status == 1 do
         status, vehicle_name = input.get("Name/Hash Input","",15,2)
@@ -440,7 +440,7 @@ local spawn_heli = menu.add_feature("Spawn Heli", "action", main_menu.id, functi
 
     request_control(heli_veh)
     request_control(heli_ped)
-    native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, spawn_pos.x, spawn_pos.y, spawn_pos.z, 4, 50.0, 20.0, -1, 10, 10, 100.0, 32+64)
+    native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, spawn_pos.x, spawn_pos.y, spawn_pos.z, 4, 50.0, 20.0, -1, 10, 10, 100.0, 32+64+4096)
 
     print("Heli ID: "..heli_veh)
     utils.to_clipboard(heli_veh)
@@ -464,7 +464,7 @@ local spawn_heli = menu.add_feature("Spawn Heli", "action", main_menu.id, functi
     request_control(heli_veh)
     request_control(heli_ped)
 
-    for i1=1, 180 do
+    for i1=1, 256 do
         vehicle.set_heli_blades_speed(heli_veh, (360-i1)/360)
         system.yield(0)
     end
@@ -543,8 +543,7 @@ local spawn_heli = menu.add_feature("Spawn Heli", "action", main_menu.id, functi
         notify("Landing at dest..","Landing",nil,0x00AAFF)
         request_control(heli_veh)
         request_control(heli_ped)
-        native.call(0xE1EF3C1216AFF2CD, heli_ped)
-        native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z, 4, 40.0, 50.0, -1, 50, 5, 1.0, 32+64)
+        native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z, 4, 20.0, 20.0, -1, 50, 5, 1.0, 32+64+4096)
 
         repeat
             system.yield(0)
@@ -554,7 +553,7 @@ local spawn_heli = menu.add_feature("Spawn Heli", "action", main_menu.id, functi
                 request_control(heli_ped)
                 entity.set_entity_velocity(heli_veh, v3(curr_vel.x, curr_vel.y, -0.75))
             end
-        until native.call(0x1DD55701034110E5, heli_veh):__tonumber() < 5 or not is_heli_active
+        until (native.call(0x1DD55701034110E5, heli_veh):__tonumber() < 5 and math.abs(entity.get_entity_velocity(heli_veh).z) < 0.5 ) or not is_heli_active
     else
         notify("Hovering above dest","Hovering",nil,0x00AAFF)
         if heli_rappeldown.on and is_heli_active then
