@@ -157,6 +157,7 @@ local vehicle_drive_close = 1076632111
 local exit_lsia_drive = 1093409295
 local exit_lsia_drive_path = 1076632127
 local vehicle_speed = 23
+local taxi_dist = 65
 
 local lsia_exit = {
     {x=-1123.1683349609, y=-3069.9182128906, z=13.944445610046, mode=exit_lsia_drive_path, speed=23},
@@ -283,6 +284,25 @@ local taxi_speed = menu.add_feature("Speed = [23]", "action", main_menu.id, func
     end
 end)
 taxi_speed.hint = "Choose the speed of the driver. Default is 23 (same as a taxi with quick mode)"
+
+local taxi_dist_feat = menu.add_feature("Dist = [65]", "action", main_menu.id, function(ft)
+    local status = 1
+    local temp_dist
+    while status == 1 do
+        status, temp_dist = input.get("Hash Input","",15,3)
+        system.yield(0)
+    end
+    taxi_dist = tonumber(temp_dist)
+
+    ft.name = "Dist = ["..temp_dist.."]"
+    
+    if is_taxi_active then
+        menu.notify("Distance updated to "..taxi_dist,"Updated Dist", nil, 0x00FF00)
+        last_drive["dist"] = taxi_dist/2
+        resume_last_drive()
+    end
+end)
+taxi_dist_feat.hint = "Choose the stop distance around destination. Default is 65"
 
 local taxi_conv = menu.add_feature("Convertible Preference","autoaction_value_str",main_menu.id, function(ft)
     if is_taxi_active and entity.is_an_entity(taxi_veh) then
@@ -623,9 +643,9 @@ local taxi_spawn = menu.add_feature("Spawn Taxi", "action", main_menu.id, functi
             end
         end
 
-        ai.task_vehicle_drive_to_coord(taxi_driver, taxi_veh, destv3_safe, 5, 0, vehicle_hash, vehicle_drive, 30, 10)
+        ai.task_vehicle_drive_to_coord(taxi_driver, taxi_veh, destv3_safe, 5, 0, vehicle_hash, vehicle_drive, (taxi_dist/2), 10)
         system.yield(250)
-        ai.task_vehicle_drive_to_coord(taxi_driver, taxi_veh, destv3_safe, 5, 0, vehicle_hash, vehicle_drive, 30, 10)
+        ai.task_vehicle_drive_to_coord(taxi_driver, taxi_veh, destv3_safe, 5, 0, vehicle_hash, vehicle_drive, (taxi_dist/2), 10)
         streaming.set_model_as_no_longer_needed(vehicle_hash)
     else
         destv3_safe = v3(0,0,0)
@@ -642,7 +662,7 @@ local taxi_spawn = menu.add_feature("Spawn Taxi", "action", main_menu.id, functi
         },
         speed=vehicle_speed,
         mode=vehicle_drive,
-        dist=50
+        dist=(taxi_dist/2)
     }
 
     if taxi_conv.value == 0 then
@@ -680,7 +700,7 @@ local taxi_spawn = menu.add_feature("Spawn Taxi", "action", main_menu.id, functi
         local hori_dist = dist_x+dist_y
 
 
-        if hori_dist < 65 and (dist_z < 5 or taxi_ignoreheight.on) then
+        if hori_dist < (last_drive.dist*2) and (dist_z < 5 or taxi_ignoreheight.on) then
 
             native.call(0x684785568EF26A22, taxi_veh, true)
             native.call(0xE4E2FD323574965C, taxi_veh, true)
@@ -915,9 +935,9 @@ local taxi_spawn_pl = menu.add_player_feature("Spawn Taxi", "action", player_men
             streaming.set_model_as_no_longer_needed(vehicle_hash)
         end
 
-        ai.task_vehicle_follow(taxi_driver, taxi_veh, tar_player_ped, 5, vehicle_drive, 25)
+        ai.task_vehicle_follow(taxi_driver, taxi_veh, tar_player_ped, 5, vehicle_drive, (taxi_dist/2))
         system.yield(250)
-        ai.task_vehicle_follow(taxi_driver, taxi_veh, tar_player_ped, 5, vehicle_drive, 25)
+        ai.task_vehicle_follow(taxi_driver, taxi_veh, tar_player_ped, 5, vehicle_drive, (taxi_dist/2))
     end
 
     last_drive = {
@@ -927,7 +947,7 @@ local taxi_spawn_pl = menu.add_player_feature("Spawn Taxi", "action", player_men
         dest=tar_player_ped,
         speed=vehicle_speed,
         mode=vehicle_drive,
-        dist=25
+        dist=(taxi_dist/2)
     }
 
     if taxi_conv.value == 0 then
@@ -964,7 +984,7 @@ local taxi_spawn_pl = menu.add_player_feature("Spawn Taxi", "action", player_men
 
         local hori_dist = dist_x+dist_y
 
-        if hori_dist < 65 then
+        if hori_dist < (last_drive.dist*2) then
 
             native.call(0x684785568EF26A22, taxi_veh, true)
             native.call(0xE4E2FD323574965C, taxi_veh, true)
