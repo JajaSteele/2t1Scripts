@@ -44,16 +44,6 @@ if menu.is_trusted_mode_enabled(1 << 3) then
     end)
 end
 
-local function question(y,n)
-    while true do
-        if controls.is_control_pressed(0, y) then
-            return true
-        elseif controls.is_control_pressed(0, n) then
-            return false
-        end
-        system.yield(0)
-    end
-end
 
 local function request_model(_hash)
     if not streaming.has_model_loaded(_hash) then
@@ -91,6 +81,8 @@ local autopilot_speed = 25
 
 local last_drive = {}
 
+local autopilot_active = false
+
 local ground_check = {900}
 repeat
     ground_check[#ground_check+1] = ground_check[#ground_check] - 25
@@ -116,6 +108,8 @@ local function get_ground(pos)
     return 50
 end
 
+local clear_autopilot
+
 local function clear_all_noyield(delay)
     if delay and type(delay) == "number" then
         system.yield(delay)
@@ -130,6 +124,9 @@ local function clear_all_noyield(delay)
     autopilot_active = false
     
     veh_pilot = 0
+
+    autopilot_active = false
+    clear_autopilot()
 end
 
 event.add_event_listener("exit", clear_all_noyield)
@@ -162,22 +159,37 @@ local main_menu = menu.add_feature("#FFFFC64D#J#FFFFD375#J#FFFFE1A1#S #FFFFF8EB#
 local select_veh_type = menu.add_feature("Select Autopilot Vehicle", "action_value_str", main_menu.id, function(ft)
     if ft.value == 0 then
         veh = find_veh(632) or 0
+
+        if veh ~= 0 then
+            menu.notify("Selected vehicle "..veh, "JJS Autopilot", nil, 0xFF00FF00)
+        end
     elseif ft.value == 1 then
-        veh = find_veh(564) or 0
+        local veh_trailer = find_veh(564)
+        veh = native.call(0x80D9D32636369C92, veh_trailer):__tointeger()
+
+        if veh ~= 0 and veh_trailer ~= 0 then
+            menu.notify("Selected vehicle "..veh.." (Trailer: "..veh_trailer..")", "JJS Autopilot", nil, 0xFF00FF00)
+        elseif veh == 0 and veh_trailer ~= 0 then
+            menu.notify("No tractor found , only MOC trailer found: "..veh_trailer, "JJS Autopilot", nil, 0xFF0000FF)
+        end
     elseif ft.value == 2 then
         veh = find_veh(840) or 0
+
+        if veh ~= 0 then
+            menu.notify("Selected vehicle "..veh, "JJS Autopilot", nil, 0xFF00FF00)
+        end
     end
-    if veh ~= 0 then
-        menu.notify("Selected vehicle "..veh, "JJS Autopilot", nil, 0xFF00FF00)
-    else
+    if veh == 0 then
         menu.notify("No vehicle found", "JJS Autopilot", nil, 0xFF0000FF)
     end
 end)
 select_veh_type:set_str_data({"Terrorbyte", "MOC", "Acid Lab"})
+select_veh_type.hint = "Choose which vehicle to autopilot, then use \"Select\" to search and register it. (Only needs to be done once every time the vehicle is called)\n#FF00AAFF#You must be outside of the vehicle to register it! \n(It uses the vehicle's blip to find it, and the blip isn't visible when inside)"
 
 local select_dest = menu.add_feature("Destination", "action_value_str", main_menu.id)
 select_dest:set_str_data({"Waypoint", "Current"})
-select_dest.hint = "Choose which vehicle to autopilot, then use \"Select\" to register it."
+select_dest.hint = "Select where the autopilot will go"
+
 
 local function resume_last_drive()
     native.call(0xE1EF3C1216AFF2CD, veh_pilot)
@@ -196,13 +208,22 @@ local autopilot_speed_choose = menu.add_feature("Speed = [25]", "action", main_m
 
     ft.name = "Speed = ["..temp_speed.."]"
     
-    menu.notify("Speed updated to "..autopilot_speed,"Updated Speed", nil, 0x00FF00)
-    last_drive["speed"] = autopilot_speed
-    resume_last_drive()
+    if autopilot_active then
+        menu.notify("Speed updated to "..autopilot_speed,"Updated Speed", nil, 0x00FF00)
+        last_drive["speed"] = autopilot_speed
+        resume_last_drive()
+    end
 end)
 autopilot_speed_choose.hint = "Choose the speed of the autopilot driver. Default is 25"
 
-local activate_autopilot = menu.add_feature("Activate Autopilot", "action", main_menu.id, function(ft)
+local function autopilot_func(ft)
+    if veh == 0 or not entity.is_an_entity(veh) or entity.is_entity_dead(veh) then
+        menu.notify("Vehicle doesn't exist anymore or is killed.", "JJS Autopilot", nil, 0xFF0000FF)
+        return
+    end
+
+    autopilot_active = true
+
     request_model(ped_hash)
     local veh_pos = entity.get_entity_coords(veh or 0)
  
@@ -224,6 +245,14 @@ local activate_autopilot = menu.add_feature("Activate Autopilot", "action", main
         local local_player = player.player_id()
         dest_v3 = player.get_player_coords(local_player)
     end
+
+    blips.dest = ui.add_blip_for_coord(dest_v3)
+    ui.set_blip_sprite(blips.dest, 58)
+    ui.set_blip_colour(blips.dest, 5)
+
+    native.call(0xF9113A30DE5C6670, "STRING")
+    native.call(0x6C188BE134E074AA, "Autopilot Destination")
+    native.call(0xBC38B49BCB83BC9B, blips.dest)
 
     request_control(veh_pilot)
     request_control(veh)
@@ -275,7 +304,20 @@ local activate_autopilot = menu.add_feature("Activate Autopilot", "action", main
 
     request_control(veh)
     vehicle.set_vehicle_engine_on(veh, false, true, false)
-end)
+
+    autopilot_active = false
+
+end
+
+local activate_autopilot = menu.add_feature("Activate Autopilot", "action", main_menu.id, autopilot_func)
+
+clear_autopilot = function()
+    menu.delete_feature(activate_autopilot.id)
+    activate_autopilot = menu.add_feature("Activate Autopilot", "action", main_menu.id, autopilot_func)
+end
+
+local clear_all_button = menu.add_feature("Clear All", "action", main_menu.id, clear_all_noyield)
+clear_all_button.hint = "Clears the pilot"
 
 if false then --DEBUG SHIT
     local debug_menu = menu.add_feature("Debug Menu", "parent", main_menu.id)
