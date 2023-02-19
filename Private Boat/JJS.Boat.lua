@@ -22,12 +22,12 @@ if menu.is_trusted_mode_enabled(1 << 3) then
         local path = utils.get_appdata_path("PopstarDevs","").."\\2Take1Menu\\scripts\\JJS.Boat.lua"
 
         local file1 = io.open(path, "r")
-        curr_file = file1:read("*a")
+        local curr_file = file1:read("*a")
         file1:close()
 
         if curr_file ~= body and code == 200 and body:len() > 0 then
             menu.notify("Update detected!\nPress 'Enter' to download or 'Backspace' to cancel\n#FF00AAFF#To disable updates, disable Trusted HTTP","JJS Boat",nil,0x00AAFF)
-            choice = question(201, 202)
+            local choice = question(201, 202)
             if choice then
                 menu.notify("Downloaded! Please reload the script","JJS Boat",nil,0x00FF00)
                 local file2 = io.open(path, "w")
@@ -509,6 +509,16 @@ local clean_boat = menu.add_feature("Clear All","action",main_menu.id,function()
     clearing = true
 end)
 clean_boat.hint = "Clean up boat + driver (Might take a while before being inactive)"
+
+local tp_boat = menu.add_feature("TP to Boat","action",main_menu.id, function()
+    if entity.is_an_entity(boat_veh or 0) then
+        local local_player = player.player_id()
+        local boat_pos = entity.get_entity_coords(boat_veh)
+        local player_ped = player.get_player_ped(local_player)
+
+        entity.set_entity_coords_no_offset(player_ped, boat_pos+v3(0,0,3))
+    end
+end)
 
 local spawn_menu = menu.add_feature("Jetski Menu","parent",main_menu.id)
 

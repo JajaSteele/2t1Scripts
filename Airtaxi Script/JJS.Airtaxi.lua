@@ -22,12 +22,12 @@ if menu.is_trusted_mode_enabled(1 << 3) then
         local path = utils.get_appdata_path("PopstarDevs","").."\\2Take1Menu\\scripts\\JJS.Airtaxi.lua"
 
         local file1 = io.open(path, "r")
-        curr_file = file1:read("*a")
+        local curr_file = file1:read("*a")
         file1:close()
 
         if curr_file ~= body and code == 200 and body:len() > 0 then
             menu.notify("Update detected!\nPress 'Enter' to download or 'Backspace' to cancel\n#FF00AAFF#To disable updates, disable Trusted HTTP","JJS Airtaxi",nil,0x00AAFF)
-            choice = question(201, 202)
+            local choice = question(201, 202)
             if choice then
                 menu.notify("Downloaded! Please reload the script","JJS Airtaxi",nil,0x00FF00)
                 local file2 = io.open(path, "w")
@@ -503,7 +503,7 @@ local spawn_heli = menu.add_feature("Spawn Heli", "action", main_menu.id, functi
     request_control(heli_veh)
     request_control(heli_ped)
     native.call(0xE1EF3C1216AFF2CD, heli_ped)
-    native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z+100, 4, vehicle_speed, 50.0, -1, 100, 30, 200.0, 0)
+    native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z+100, 4, vehicle_speed, 175.0, -1, 100, 30, 300.0, 0)
 
     while true do
         local heli_pos_live = entity.get_entity_coords(heli_veh)
