@@ -227,12 +227,12 @@ local heli_dest = menu.add_feature("Which Destination?","autoaction_value_str",m
     end
 end)
 heli_dest.hint = "Choose where the cargobob will deliver\n#FF00AAFF#Your destination will only be saved once the vehicle is picked up."
-heli_dest:set_str_data({"Waypoint","Here","Player"})
+heli_dest:set_str_data({"Waypoint","Here"})
 
-local select_player = menu.add_player_feature("Select for Cargobob Dest", "action", 0, function(ft, ply, data)
-    target_player = ply
-    menu.notify("Selected player "..ply.." ("..player.get_player_name(ply)..")", "JJS Cargobob", nil, 0xFF0000FF)
-end)
+-- local select_player = menu.add_player_feature("Select for Cargobob Dest", "action", 0, function(ft, ply, data)
+--     target_player = ply
+--     menu.notify("Selected player "..ply.." ("..player.get_player_name(ply)..")", "JJS Cargobob", nil, 0xFF0000FF)
+-- end)
 
 local hover_mode = menu.add_feature("No Dropping","toggle",main_menu.id,function(ft)
     if not ft.on and is_heli_active then
@@ -457,7 +457,7 @@ local spawn_cargo = menu.add_feature("Spawn Cargobob","action",main_menu.id, fun
         request_control(heli_veh)
         request_control(heli_ped)
         native.call(0xE1EF3C1216AFF2CD, heli_ped)
-        native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, tar_ply_coords.x, tar_ply_coords.y, tar_ply_coords.z+vehicle_dropheight, 4, vehicle_speed, 15.0, -1, 200, vehicle_dropheight, 200.0, 0)
+        native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, tar_ply_coords.x, tar_ply_coords.y, tar_ply_coords.z+vehicle_dropheight, 4, vehicle_speed, 175.0, -1, 200, vehicle_dropheight, 200.0, 0)
 
         local timer = 30
 
@@ -469,7 +469,7 @@ local spawn_cargo = menu.add_feature("Spawn Cargobob","action",main_menu.id, fun
             if timer > 0 then
                 timer = timer-1
             else
-                native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, tar_player_pos.x, tar_player_pos.y, tar_player_pos.z+vehicle_dropheight, 4, vehicle_speed, 15.0, -1, 200, vehicle_dropheight, 200.0, 0)
+                native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, tar_player_pos.x, tar_player_pos.y, tar_player_pos.z+vehicle_dropheight, 4, vehicle_speed, 175.0, -1, 200, vehicle_dropheight, 200.0, 0)
                 print("Going to "..tar_player_pos.x.." | "..tar_player_pos.y.." | "..tar_player_pos.z+vehicle_dropheight.." | ")
                 timer = 30
             end
