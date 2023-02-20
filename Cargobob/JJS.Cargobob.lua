@@ -69,6 +69,8 @@ local ped_hash = 988062523
 local vehicle_dropheight = 15
 local vehicle_speed = 35.0
 
+local target_player = -20
+
 local blips = {}
 local heli_ped
 local heli_veh
@@ -219,9 +221,18 @@ local heli_veh_type = menu.add_feature("Which Vehicle?","autoaction_value_str",m
 heli_veh_type.hint = "Choose which vehicle the cargobob should pick up\n#FF0000FF#Probably won't work on high distance!\n#FF00AAFF#If you're not in the vehicle to help, magnet mode is suggested."
 heli_veh_type:set_str_data({"Current","Personal"})
 
-local heli_dest = menu.add_feature("Which Destination?","autoaction_value_str",main_menu.id)
-heli_dest.hint = "Choose where the cargobob will deliver\n#FF00AAFF#Your position will only be saved once the vehicle is picked up."
-heli_dest:set_str_data({"Waypoint","Here"})
+local heli_dest = menu.add_feature("Which Destination?","autoaction_value_str",main_menu.id,function(ft)
+    if ft.value == 2 and not player.is_player_valid(target_player) then
+        menu.notify("No Selected Player!\nGo into Online > Online Players > [PLAYER] > Script Features > Select for Cargobob Dest", "JJS Cargobob", nil, 0xFF0000FF)
+    end
+end)
+heli_dest.hint = "Choose where the cargobob will deliver\n#FF00AAFF#Your destination will only be saved once the vehicle is picked up."
+heli_dest:set_str_data({"Waypoint","Here","Player"})
+
+local select_player = menu.add_player_feature("Select for Cargobob Dest", "action", 0, function(ft, ply, data)
+    target_player = ply
+    menu.notify("Selected player "..ply.." ("..player.get_player_name(ply)..")", "JJS Cargobob", nil, 0xFF0000FF)
+end)
 
 local hover_mode = menu.add_feature("No Dropping","toggle",main_menu.id,function(ft)
     if not ft.on and is_heli_active then
@@ -280,7 +291,7 @@ local spawn_cargo = menu.add_feature("Spawn Cargobob","action",main_menu.id, fun
         veh_heading = entity.get_entity_heading(player_veh)
     end
 
-    local spawn_pos = veh_pos+v3(0,0,veh_height+10)
+    local spawn_pos = veh_pos+v3(0,0,veh_height+6)
 
     local pickup_pos = front_of_pos(veh_pos, v3(0,0,veh_heading), -1)
 
@@ -361,83 +372,122 @@ local spawn_cargo = menu.add_feature("Spawn Cargobob","action",main_menu.id, fun
         wp3 = player.get_player_coords(local_player)
     end
         
+    if heli_dest.value ~= 2 then
+        notify("Flying to:\nX: "..wp3.x.." Y: "..wp3.y.." Z: "..wp3.z,"Flying to Dest",nil,0x00AAFF)
 
-    notify("Flying to:\nX: "..wp3.x.." Y: "..wp3.y.." Z: "..wp3.z,"Flying to Dest",nil,0x00AAFF)
+        blips.dest = ui.add_blip_for_coord(wp3)
+        ui.set_blip_sprite(blips.dest, 58)
+        ui.set_blip_colour(blips.dest, 5)
 
-    blips.dest = ui.add_blip_for_coord(wp3)
-    ui.set_blip_sprite(blips.dest, 58)
-    ui.set_blip_colour(blips.dest, 5)
+        native.call(0xF9113A30DE5C6670, "STRING")
+        native.call(0x6C188BE134E074AA, "Cargobob Destination")
+        native.call(0xBC38B49BCB83BC9B, blips.dest)
 
-    native.call(0xF9113A30DE5C6670, "STRING")
-    native.call(0x6C188BE134E074AA, "Cargobob Destination")
-    native.call(0xBC38B49BCB83BC9B, blips.dest)
+        print("Flying to dest")
+        request_control(heli_veh)
+        request_control(heli_ped)
+        native.call(0xE1EF3C1216AFF2CD, heli_ped)
+        native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z+120, 4, vehicle_speed, 50.0, -1, 500, 55, 200.0, 0)
 
-    print("Flying to dest")
-    request_control(heli_veh)
-    request_control(heli_ped)
-    native.call(0xE1EF3C1216AFF2CD, heli_ped)
-    native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z+120, 4, vehicle_speed, 50.0, -1, 500, 55, 200.0, 0)
+        while true do
+            local heli_pos_live = entity.get_entity_coords(heli_veh)
 
-    while true do
-        local heli_pos_live = entity.get_entity_coords(heli_veh)
+            local dist_x = math.abs(heli_pos_live.x - wp3.x)
+            local dist_y = math.abs(heli_pos_live.y - wp3.y)
+            local dist_z = math.abs(heli_pos_live.z - wp3.z)
 
-        local dist_x = math.abs(heli_pos_live.x - wp3.x)
-        local dist_y = math.abs(heli_pos_live.y - wp3.y)
-        local dist_z = math.abs(heli_pos_live.z - wp3.z)
+            local hori_dist = dist_x+dist_y
 
-        local hori_dist = dist_x+dist_y
-
-        if hori_dist < 750 or clearing then
-            print("Slowing Down")
-            native.call(0x5C9B84BD7D31D908, heli_ped, 20)
-            break
+            if hori_dist < 750 or clearing then
+                print("Slowing Down")
+                native.call(0x5C9B84BD7D31D908, heli_ped, 20)
+                break
+            end
+            system.yield(0)
         end
-        system.yield(0)
-    end
 
-    request_control(heli_veh)
-    request_control(heli_ped)
-    native.call(0xE1EF3C1216AFF2CD, heli_ped)
-    native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z+vehicle_dropheight, 4, 30.0, 10.0, -1, 100, 35, 75.0, 0)
+        request_control(heli_veh)
+        request_control(heli_ped)
+        native.call(0xE1EF3C1216AFF2CD, heli_ped)
+        native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z+vehicle_dropheight, 4, 30.0, 10.0, -1, 100, 35, 75.0, 0)
 
-    while true do
-        local heli_pos_live = entity.get_entity_coords(heli_veh)
+        while true do
+            local heli_pos_live = entity.get_entity_coords(heli_veh)
 
-        local dist_x = math.abs(heli_pos_live.x - wp3.x)
-        local dist_y = math.abs(heli_pos_live.y - wp3.y)
-        local dist_z = math.abs(heli_pos_live.z - wp3.z)
+            local dist_x = math.abs(heli_pos_live.x - wp3.x)
+            local dist_y = math.abs(heli_pos_live.y - wp3.y)
+            local dist_z = math.abs(heli_pos_live.z - wp3.z)
 
-        local hori_dist = dist_x+dist_y
+            local hori_dist = dist_x+dist_y
 
-        if hori_dist < 15 or clearing then
-            print("Landing")
-            break
+            if hori_dist < 15 or clearing then
+                print("Landing")
+                break
+            end
+            system.yield(0)
         end
-        system.yield(0)
+
+        local curr_heli_heading = entity.get_entity_heading(heli_veh)
+
+        request_control(heli_veh)
+        request_control(heli_ped)
+        native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z+vehicle_dropheight, 4, 10.0, 5.0, curr_heli_heading, 100, 1, 5.0, 1)
+
+        repeat
+            local heli_pos_live = entity.get_entity_coords(heli_veh)
+
+            local dist_x = math.abs(heli_pos_live.x - wp3.x)
+            local dist_y = math.abs(heli_pos_live.y - wp3.y)
+            local dist_z = math.abs(heli_pos_live.z - (wp3.z+vehicle_dropheight))
+
+            local hori_dist = dist_x+dist_y
+
+            local rot_s = entity.get_entity_rotation_velocity(heli_veh)
+            local rot_s_veh = entity.get_entity_rotation_velocity(player_veh)
+
+            local rot_speed = math.abs(rot_s.x)+math.abs(rot_s.y)+math.abs(rot_s.z)
+            local rot_speed_veh = math.abs(rot_s_veh.x)+math.abs(rot_s_veh.y)+math.abs(rot_s_veh.z)
+            system.yield(0)
+        until (hori_dist < 10 and dist_z < 25 and entity.get_entity_speed(heli_veh) < 2 and entity.get_entity_speed(player_veh) < 2 and rot_speed_veh < 1 and rot_speed < 1) or clearing
+    else
+
+        local tar_ply_coords = player.get_player_coords(target_player)
+
+        print("Flying to Player")
+        request_control(heli_veh)
+        request_control(heli_ped)
+        native.call(0xE1EF3C1216AFF2CD, heli_ped)
+        native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, tar_ply_coords.x, tar_ply_coords.y, tar_ply_coords.z+vehicle_dropheight, 4, vehicle_speed, 15.0, -1, 200, vehicle_dropheight, 200.0, 0)
+
+        local timer = 30
+
+        repeat
+            local heli_pos_live = entity.get_entity_coords(heli_veh)
+
+            local tar_player_pos = player.get_player_coords(target_player)
+
+            if timer > 0 then
+                timer = timer-1
+            else
+                native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, tar_player_pos.x, tar_player_pos.y, tar_player_pos.z+vehicle_dropheight, 4, vehicle_speed, 15.0, -1, 200, vehicle_dropheight, 200.0, 0)
+                print("Going to "..tar_player_pos.x.." | "..tar_player_pos.y.." | "..tar_player_pos.z+vehicle_dropheight.." | ")
+                timer = 30
+            end
+
+            local dist_x = math.abs(heli_pos_live.x - tar_player_pos.x)
+            local dist_y = math.abs(heli_pos_live.y - tar_player_pos.y)
+            local dist_z = math.abs(heli_pos_live.z - (tar_player_pos.z+vehicle_dropheight))
+
+            local hori_dist = dist_x+dist_y
+
+            local rot_s = entity.get_entity_rotation_velocity(heli_veh)
+            local rot_s_veh = entity.get_entity_rotation_velocity(player_veh)
+
+            local rot_speed = math.abs(rot_s.x)+math.abs(rot_s.y)+math.abs(rot_s.z)
+            local rot_speed_veh = math.abs(rot_s_veh.x)+math.abs(rot_s_veh.y)+math.abs(rot_s_veh.z)
+            system.yield(0)
+        until (hori_dist < 10 and dist_z < 25 and entity.get_entity_speed(heli_veh) < 2 and entity.get_entity_speed(player_veh) < 2 and rot_speed_veh < 1 and rot_speed < 1) or clearing
     end
-
-    local curr_heli_heading = entity.get_entity_heading(heli_veh)
-
-    request_control(heli_veh)
-    request_control(heli_ped)
-    native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z+vehicle_dropheight, 4, 10.0, 5.0, curr_heli_heading, 100, 1, 5.0, 1)
-
-    repeat
-        local heli_pos_live = entity.get_entity_coords(heli_veh)
-
-        local dist_x = math.abs(heli_pos_live.x - wp3.x)
-        local dist_y = math.abs(heli_pos_live.y - wp3.y)
-        local dist_z = math.abs(heli_pos_live.z - (wp3.z+vehicle_dropheight))
-
-        local hori_dist = dist_x+dist_y
-
-        local rot_s = entity.get_entity_rotation_velocity(heli_veh)
-        local rot_s_veh = entity.get_entity_rotation_velocity(player_veh)
-
-        local rot_speed = math.abs(rot_s.x)+math.abs(rot_s.y)+math.abs(rot_s.z)
-        local rot_speed_veh = math.abs(rot_s_veh.x)+math.abs(rot_s_veh.y)+math.abs(rot_s_veh.z)
-        system.yield(0)
-    until (hori_dist < 10 and dist_z < 25 and entity.get_entity_speed(heli_veh) < 2 and entity.get_entity_speed(player_veh) < 2 and rot_speed_veh < 1 and rot_speed < 1) or clearing
 
     yield(2000)
 
@@ -461,7 +511,9 @@ local spawn_cargo = menu.add_feature("Spawn Cargobob","action",main_menu.id, fun
 
     request_control(heli_veh)
     request_control(heli_ped)
-    native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z+vehicle_dropheight+100, 4, 90.0, 50.0, curr_heli_heading, 200, 5, 1.0, 1)
+    if heli_dest.value ~= 2 then
+        native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z+vehicle_dropheight+100, 4, 90.0, 50.0, curr_heli_heading, 200, 5, 1.0, 1)
+    end
 
     yield(3000)
 
