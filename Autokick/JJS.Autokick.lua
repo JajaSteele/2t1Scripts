@@ -117,7 +117,7 @@ event.add_event_listener("player_join", function(event)
     end
 end)
 
-local add_to_list = menu.add_player_feature("Add to Autokick List", "action", 0, function(ft,ply,data)
+local add_to_list = menu.add_player_feature("#FF0000FF#Add to Autokick List", "action_value_str", 0, function(ft,ply,data)
     load_list()
     kick_list[#kick_list+1] = {
         name = player.get_player_name(ply),
@@ -126,6 +126,13 @@ local add_to_list = menu.add_player_feature("Add to Autokick List", "action", 0,
     save_list()
     load_list()
     update_list()
-    menu.notify("Added Player to Autokick list:\nName: "..(kick_list[#kick_list].name).."\nSCID: "..(kick_list[#kick_list].scid), "Added to List", nil, 0xFF00FF00)
+    if ft.value == 1 then
+        network.force_remove_player(ply)
+        menu.notify("Added (And kicked) Player to Autokick list:\nName: "..(kick_list[#kick_list].name).."\nSCID: "..(kick_list[#kick_list].scid), "Added to List", nil, 0xFF00FF00)
+    else
+        menu.notify("Added Player to Autokick list:\nName: "..(kick_list[#kick_list].name).."\nSCID: "..(kick_list[#kick_list].scid), "Added to List", nil, 0xFF00FF00)
+    end
+    
 end)
 add_to_list.hint = "Add the player to the Autokick list\nWill not kick the player out, just prevent them from rejoining."
+add_to_list:set_str_data({"#FF0055FF#Add Only#DEFAULT#","#FF0000FF#Add + Kick#DEFAULT#"})
