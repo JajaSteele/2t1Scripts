@@ -342,6 +342,8 @@ local spawn_cargo = menu.add_feature("Spawn Cargobob","action",main_menu.id, fun
         native.call(0x7BEB0C7A235F6F3B, heli_veh, 1)
 
         native.call(0xE301BD63E9E13CF0, player_veh, heli_veh)
+        native.call(0x66979ACF5102FD2F, heli_veh, 0.01)
+        native.call(0x6D8EAC07506291FB, heli_veh, 0.01)
 
         repeat
             local curr_heli_pos = entity.get_entity_coords(heli_veh)
