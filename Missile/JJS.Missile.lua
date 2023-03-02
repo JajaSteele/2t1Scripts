@@ -76,6 +76,10 @@ local handheld_thread
 
 local main_menu = menu.add_feature("#FFFFC64D#J#FFFFD375#J#FFFFE1A1#S #FFFFF8EB#Missile","parent",0)
 
+local handheld_mode_value = 0
+
+local hominglauncher_hash = gameplay.get_hash_key("weapon_hominglauncher")
+
 local enable_handheld = menu.add_feature("Handheld Missiles Upgrade","toggle", main_menu.id, function(ft)
     if ft.on then
         handheld_thread = menu.create_thread(function()
@@ -87,21 +91,37 @@ local enable_handheld = menu.add_feature("Handheld Missiles Upgrade","toggle", m
                 local player_pos = player.get_player_coords(local_player)
                 local player_heading = player.get_player_heading(local_player)
 
-                local spawn_pos = front_of_pos(player_pos, cam.get_gameplay_cam_rot(), 0.25)
-                local spawn_pos2 = front_of_pos(player_pos, cam.get_gameplay_cam_rot(), 0.5)
+                local spawn_pos = front_of_pos(player_pos+v3(0,0,0.5), cam.get_gameplay_cam_rot(), 0.25)
+                local spawn_pos2 = front_of_pos(player_pos+v3(0,0,0.5), cam.get_gameplay_cam_rot(), 0.5)
 
-                local target_buffer = native.ByteBuffer16()
-                native.call(0x13EDE1A5DBF797C9, local_player, target_buffer)
-                local target = target_buffer:__tointeger()
+                local target
 
-                if weapon == gameplay.get_hash_key("weapon_hominglauncher") and target ~= 0 and controls.is_control_pressed(0, 24) then
+                if handheld_mode_value == 0 then
+                    local target_buffer = native.ByteBuffer16()
+                    native.call(0x13EDE1A5DBF797C9, local_player, target_buffer)
+                    target = target_buffer:__tointeger()
+                elseif handheld_mode_value == 1 then
+                    target = player.get_entity_player_is_aiming_at(local_player)
+
+                    if weapon == hominglauncher_hash then
+                        local w = 2/graphics.get_screen_width()
+                        local h = 2/graphics.get_screen_height()
+
+                        ui.draw_rect(0.5-w, 0.5-h, w, h, 255, 0, 255, 255)
+                    end
+                end
+
+                if target ~= 0 and weapon == hominglauncher_hash then
+                    ui.draw_line(spawn_pos, entity.get_entity_coords(target), 255, 0, 255, 255)
+                end
+
+                if weapon == hominglauncher_hash and target ~= 0 and controls.is_control_pressed(0, 24) then
                     system.yield(2)
 
-                    native.call(0xFC52E0F37E446528, gameplay.get_hash_key("weapon_hominglauncher"), false)
+                    native.call(0xFC52E0F37E446528, hominglauncher_hash, false)
 
                     system.yield(0)
 
-                    print("Spawning Missile")
                     native.call(0xBFE5756E7407064A, spawn_pos, spawn_pos2, 5000, true, gameplay.get_hash_key("VEHICLE_WEAPON_RUINER_ROCKET"), local_ped, true, false, 1650.0, local_ped, true, false, target, true, 1, 0, 1)
                 end
                 system.yield(0)
@@ -111,3 +131,8 @@ local enable_handheld = menu.add_feature("Handheld Missiles Upgrade","toggle", m
         menu.delete_thread(handheld_thread)
     end
 end)
+
+local handheld_mode = menu.add_feature("Handheld Missiles Mode","autoaction_value_str", main_menu.id, function(ft)
+    handheld_mode_value = ft.value
+end)
+handheld_mode:set_str_data({"Lock-on","Aiming At"})
