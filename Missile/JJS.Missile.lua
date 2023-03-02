@@ -82,6 +82,10 @@ local hominglauncher_hash = gameplay.get_hash_key("weapon_hominglauncher")
 
 local missile_speed = 1650.0
 
+local shoot_mode = 0
+
+local missile_swarm_count = 10
+
 local enable_handheld = menu.add_feature("Handheld Missiles Upgrade","toggle", main_menu.id, function(ft)
     if ft.on then
         handheld_thread = menu.create_thread(function()
@@ -95,6 +99,18 @@ local enable_handheld = menu.add_feature("Handheld Missiles Upgrade","toggle", m
 
                 local spawn_pos = front_of_pos(player_pos+v3(0,0,0.5), cam.get_gameplay_cam_rot(), 0.25)
                 local spawn_pos2 = front_of_pos(player_pos+v3(0,0,0.5), cam.get_gameplay_cam_rot(), 0.5)
+
+                local spawn_pos_L 
+                local spawn_pos2_L
+                local spawn_pos_R
+                local spawn_pos2_R
+
+                if shoot_mode == 1 then
+                    spawn_pos_L  = front_of_pos(player_pos+v3(0,0,0.5), cam.get_gameplay_cam_rot()+v3(0,0,-5), 0.25)
+                    spawn_pos2_L = front_of_pos(player_pos+v3(0,0,0.5), cam.get_gameplay_cam_rot()+v3(0,0,-5), 0.5)
+                    spawn_pos_R = front_of_pos(player_pos+v3(0,0,0.5), cam.get_gameplay_cam_rot()+v3(0,0,5), 0.25)
+                    spawn_pos2_R = front_of_pos(player_pos+v3(0,0,0.5), cam.get_gameplay_cam_rot()+v3(0,0,5), 0.5)
+                end
 
                 local target
 
@@ -125,6 +141,22 @@ local enable_handheld = menu.add_feature("Handheld Missiles Upgrade","toggle", m
                     system.yield(0)
 
                     native.call(0xBFE5756E7407064A, spawn_pos, spawn_pos2, 5000, true, gameplay.get_hash_key("VEHICLE_WEAPON_DELUXO_MISSILE"), local_ped, true, false, missile_speed, local_ped, true, false, target, true, 1, 0, 1)
+                    if shoot_mode == 1 then
+                        native.call(0xBFE5756E7407064A, spawn_pos_L, spawn_pos2_L, 5000, true, gameplay.get_hash_key("VEHICLE_WEAPON_DELUXO_MISSILE"), local_ped, true, false, missile_speed, local_ped, true, false, target, true, 1, 0, 1)
+                        native.call(0xBFE5756E7407064A, spawn_pos_R, spawn_pos2_R, 5000, true, gameplay.get_hash_key("VEHICLE_WEAPON_DELUXO_MISSILE"), local_ped, true, false, missile_speed, local_ped, true, false, target, true, 1, 0, 1)
+                    elseif shoot_mode == 2 then
+                        for i1=1, missile_swarm_count do
+                            local anglex = math.random(-10,10)
+                            local angley = math.random(-10,10)
+                            local anglez = math.random(-10,10)
+                            local speed = math.random(-300,5000)
+                            local spawn_pos_S = front_of_pos(player_pos+v3(0,0,0.5), cam.get_gameplay_cam_rot()+v3(anglex,angley,anglez), 0.25)
+                            local spawn_pos2_S = front_of_pos(player_pos+v3(0,0,0.5), cam.get_gameplay_cam_rot()+v3(anglex,angley,anglez), 0.5)
+                            native.call(0xBFE5756E7407064A, spawn_pos_S, spawn_pos2_S, 5000, true, gameplay.get_hash_key("VEHICLE_WEAPON_DELUXO_MISSILE"), local_ped, true, false, missile_speed+speed, local_ped, true, false, target, true, 1, 0, 1)
+                            ui.draw_text("Missiles : "..i1.."/"..missile_swarm_count,v2(0.05,0.05))
+                            system.yield(0)
+                        end
+                    end
                 end
                 system.yield(0)
             end
@@ -139,11 +171,16 @@ local handheld_mode = menu.add_feature("Handheld Missiles Mode","autoaction_valu
 end)
 handheld_mode:set_str_data({"Lock-on","Aiming At"})
 
+local handheld_count = menu.add_feature("Count","autoaction_value_str", main_menu.id, function(ft)
+    shoot_mode = ft.value
+end)
+handheld_count:set_str_data({"Single","Triple","Swarm"})
+
 local missile_speed_menu = menu.add_feature("Speed = [1650]", "action", main_menu.id, function(ft)
     local status = 1
     local temp_speed
     while status == 1 do
-        status, temp_speed = input.get("Hash Input","",15,3)
+        status, temp_speed = input.get("Speed Input","",15,3)
         system.yield(0)
     end
     missile_speed = tonumber(temp_speed)+0.00001
@@ -152,6 +189,20 @@ local missile_speed_menu = menu.add_feature("Speed = [1650]", "action", main_men
 
 end)
 missile_speed_menu.hint = "Choose the speed of the missile. Default is 1650"
+
+local missile_swarm_count_menu = menu.add_feature("Swarm Count = [10]", "action", main_menu.id, function(ft)
+    local status = 1
+    local temp_speed
+    while status == 1 do
+        status, temp_speed = input.get("Count Input","",15,3)
+        system.yield(0)
+    end
+    missile_swarm_count = tonumber(temp_speed)
+
+    ft.name = "Swarm Count = ["..temp_speed.."]"
+
+end)
+missile_swarm_count_menu.hint = "Choose the count of missiles in swarm mode. Default is 10"
 
 
 if false then -- DEBUG
