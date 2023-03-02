@@ -134,11 +134,11 @@ local enable_handheld = menu.add_feature("Handheld Missiles Upgrade","toggle", m
                 end
 
                 if weapon == hominglauncher_hash and target ~= 0 and controls.is_control_pressed(0, 24) then
-                    system.yield(2)
+                    system.yield(10)
 
                     native.call(0xFC52E0F37E446528, hominglauncher_hash, false)
 
-                    system.yield(0)
+                    system.yield(10)
 
                     native.call(0xBFE5756E7407064A, spawn_pos, spawn_pos2, 5000, true, gameplay.get_hash_key("VEHICLE_WEAPON_DELUXO_MISSILE"), local_ped, true, false, missile_speed, local_ped, true, false, target, true, 1, 0, 1)
                     if shoot_mode == 1 then
