@@ -80,6 +80,8 @@ local handheld_mode_value = 0
 
 local hominglauncher_hash = gameplay.get_hash_key("weapon_hominglauncher")
 
+local missile_speed = 1650.0
+
 local enable_handheld = menu.add_feature("Handheld Missiles Upgrade","toggle", main_menu.id, function(ft)
     if ft.on then
         handheld_thread = menu.create_thread(function()
@@ -122,7 +124,7 @@ local enable_handheld = menu.add_feature("Handheld Missiles Upgrade","toggle", m
 
                     system.yield(0)
 
-                    native.call(0xBFE5756E7407064A, spawn_pos, spawn_pos2, 5000, true, gameplay.get_hash_key("VEHICLE_WEAPON_RUINER_ROCKET"), local_ped, true, false, 1650.0, local_ped, true, false, target, true, 1, 0, 1)
+                    native.call(0xBFE5756E7407064A, spawn_pos, spawn_pos2, 5000, true, gameplay.get_hash_key("VEHICLE_WEAPON_DELUXO_MISSILE"), local_ped, true, false, missile_speed, local_ped, true, false, target, true, 1, 0, 1)
                 end
                 system.yield(0)
             end
@@ -136,3 +138,34 @@ local handheld_mode = menu.add_feature("Handheld Missiles Mode","autoaction_valu
     handheld_mode_value = ft.value
 end)
 handheld_mode:set_str_data({"Lock-on","Aiming At"})
+
+local missile_speed_menu = menu.add_feature("Speed = [1650]", "action", main_menu.id, function(ft)
+    local status = 1
+    local temp_speed
+    while status == 1 do
+        status, temp_speed = input.get("Hash Input","",15,3)
+        system.yield(0)
+    end
+    missile_speed = tonumber(temp_speed)+0.00001
+
+    ft.name = "Speed = ["..temp_speed.."]"
+
+end)
+missile_speed_menu.hint = "Choose the speed of the missile. Default is 1650"
+
+
+if false then -- DEBUG
+    local missile_test = menu.add_feature("Test Missile","action",main_menu.id, function()
+        local local_player = player.player_id()
+        local player_pos = player.get_player_coords(local_player)
+        local player_ped = player.get_player_ped(local_player)
+        local player_veh = ped.get_vehicle_ped_is_using(player_ped)
+        local veh_pos = entity.get_entity_coords(player_veh)
+        local veh_rot = entity.get_entity_rotation(player_veh)
+
+        local spawn_pos = front_of_pos(veh_pos, cam.get_gameplay_cam_rot(), 500)
+        local spawn_pos2 = front_of_pos(veh_pos, cam.get_gameplay_cam_rot(), 450)
+
+        native.call(0xBFE5756E7407064A, spawn_pos, spawn_pos2, 5000, true, gameplay.get_hash_key("VEHICLE_WEAPON_DELUXO_MISSILE"), local_ped, true, false, missile_speed, local_ped, true, false, player_veh, true, 1, 0, 1)
+    end)
+end
