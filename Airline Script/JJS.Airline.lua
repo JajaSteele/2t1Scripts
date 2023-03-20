@@ -86,6 +86,7 @@ local is_plane_active = false
 
 local trans_veh_name = "sanchez2"
 local trans_veh_hash = gameplay.get_hash_key(trans_veh_name)
+local color_ini = IniParser("scripts/JJS_Color_Override.ini")
 
 local function notify(text,title,dur,color)
     if is_plane_active then
@@ -480,9 +481,22 @@ local spawn_plane = menu.add_feature("Spawn Plane","action",main_menu.id,functio
     system.yield(50)
 
     vehicle.set_vehicle_mod_kit_type(plane_veh, 0)
-    vehicle.set_vehicle_colors(plane_veh, 107, 99)
-    vehicle.set_vehicle_extra_colors(plane_veh, 36, 0)
-    vehicle.set_vehicle_window_tint(plane_veh, 1)
+
+    if color_ini:read() then
+        local _, primary = color_ini:get_i("Airline","primary")
+        local _, secondary = color_ini:get_i("Airline","secondary")
+        local _, pearl = color_ini:get_i("Airline","pearl")
+        local _, wheels = color_ini:get_i("Airline","wheels")
+        local _, windows = color_ini:get_i("Airline","windows_tint")
+
+        vehicle.set_vehicle_colors(plane_veh, primary or 107, secondary or 99)
+        vehicle.set_vehicle_extra_colors(plane_veh, pearl or 36, wheels or 0)
+        vehicle.set_vehicle_window_tint(plane_veh, windows or 1)
+    else
+        vehicle.set_vehicle_colors(plane_veh, 107, 99)
+        vehicle.set_vehicle_extra_colors(plane_veh, 36, 0)
+        vehicle.set_vehicle_window_tint(plane_veh, 1)
+    end
 
     
     if plane_allowfront.on then
@@ -665,9 +679,22 @@ local spawn_plane = menu.add_feature("Spawn Plane","action",main_menu.id,functio
 
             vehicle.set_vehicle_mod_kit_type(trans_veh_veh, 0)
 
-            vehicle.set_vehicle_colors(trans_veh_veh, 12, 12)
-            vehicle.set_vehicle_extra_colors(trans_veh_veh, 64, 62)
-            vehicle.set_vehicle_window_tint(trans_veh_veh, 1)
+            if color_ini:read() then
+                local _, primary = color_ini:get_i("AirlineTransp","primary")
+                local _, secondary = color_ini:get_i("AirlineTransp","secondary")
+                local _, pearl = color_ini:get_i("AirlineTransp","pearl")
+                local _, wheels = color_ini:get_i("AirlineTransp","wheels")
+                local _, windows = color_ini:get_i("AirlineTransp","windows_tint")
+
+                vehicle.set_vehicle_colors(trans_veh_veh, primary or 12, secondary or 12)
+                vehicle.set_vehicle_extra_colors(trans_veh_veh, pearl or 64, wheels or 62)
+                vehicle.set_vehicle_window_tint(trans_veh_veh, windows or 1)
+
+            else
+                vehicle.set_vehicle_colors(trans_veh_veh, 12, 12)
+                vehicle.set_vehicle_extra_colors(trans_veh_veh, 64, 62)
+                vehicle.set_vehicle_window_tint(trans_veh_veh, 1)
+            end
 
             vehicle.set_vehicle_mod(trans_veh_veh, 11, 3)
             vehicle.set_vehicle_mod(trans_veh_veh, 15, 3)

@@ -158,6 +158,7 @@ local exit_lsia_drive = 1093409295
 local exit_lsia_drive_path = 1076632127
 local vehicle_speed = 23
 local taxi_dist = 65
+local color_ini = IniParser("scripts/JJS_Color_Override.ini")
 
 local lsia_exit = {
     {x=-1123.1683349609, y=-3069.9182128906, z=13.944445610046, mode=exit_lsia_drive_path, speed=23},
@@ -417,7 +418,7 @@ local function clear_all_noyield(delay)
 
     is_taxi_active = false
     
-    merc_peds = {}
+    taxi_driver = 0
     taxi_veh = 0
 end
 
@@ -535,9 +536,21 @@ local taxi_spawn = menu.add_feature("Spawn Taxi", "action", main_menu.id, functi
         native.call(0x1F4ED342ACEFE62D, taxi_veh, true, true)
         vehicle.set_vehicle_mod_kit_type(taxi_veh, 0)
 
-        vehicle.set_vehicle_colors(taxi_veh, 12, 12)
-        vehicle.set_vehicle_extra_colors(taxi_veh, 64, 62)
-        vehicle.set_vehicle_window_tint(taxi_veh, 1)
+        if color_ini:read() then
+            local _, primary = color_ini:get_i("Taxi","primary")
+            local _, secondary = color_ini:get_i("Taxi","secondary")
+            local _, pearl = color_ini:get_i("Taxi","pearl")
+            local _, wheels = color_ini:get_i("Taxi","wheels")
+            local _, windows = color_ini:get_i("Taxi","windows_tint")
+
+            vehicle.set_vehicle_colors(taxi_veh, primary or 12, secondary or 12)
+            vehicle.set_vehicle_extra_colors(taxi_veh, pearl or 64, wheels or 62)
+            vehicle.set_vehicle_window_tint(taxi_veh, windows or 1)
+        else
+            vehicle.set_vehicle_colors(taxi_veh, 12, 12)
+            vehicle.set_vehicle_extra_colors(taxi_veh, 64, 62)
+            vehicle.set_vehicle_window_tint(taxi_veh, 1)
+        end
 
         vehicle.set_vehicle_mod(taxi_veh, 11, 3)
         vehicle.set_vehicle_mod(taxi_veh, 15, 3)
@@ -838,9 +851,21 @@ local taxi_spawn_pl = menu.add_player_feature("Spawn Taxi", "action", player_men
     if not taxi_per_veh.on then
         vehicle.set_vehicle_mod_kit_type(taxi_veh, 0)
 
-        vehicle.set_vehicle_colors(taxi_veh, 12, 12)
-        vehicle.set_vehicle_extra_colors(taxi_veh, 64, 62)
-        vehicle.set_vehicle_window_tint(taxi_veh, 1)
+        if color_ini:read() then
+            local _, primary = color_ini:get_i("Taxi","primary")
+            local _, secondary = color_ini:get_i("Taxi","secondary")
+            local _, pearl = color_ini:get_i("Taxi","pearl")
+            local _, wheels = color_ini:get_i("Taxi","wheels")
+            local _, windows = color_ini:get_i("Taxi","windows_tint")
+
+            vehicle.set_vehicle_colors(taxi_veh, primary or 12, secondary or 12)
+            vehicle.set_vehicle_extra_colors(taxi_veh, pearl or 64, wheels or 62)
+            vehicle.set_vehicle_window_tint(taxi_veh, windows or 1)
+        else
+            vehicle.set_vehicle_colors(taxi_veh, 12, 12)
+            vehicle.set_vehicle_extra_colors(taxi_veh, 64, 62)
+            vehicle.set_vehicle_window_tint(taxi_veh, 1)
+        end
 
         vehicle.set_vehicle_mod(taxi_veh, 11, 3)
         vehicle.set_vehicle_mod(taxi_veh, 15, 3)

@@ -76,6 +76,7 @@ local heli_veh
 
 local is_heli_active = false
 local heli_rappeldown2 = false
+local color_ini = IniParser("scripts/JJS_Color_Override.ini")
 
 local function clear_all_noyield(delay)
     if delay and type(delay) == "number" then
@@ -403,9 +404,23 @@ local spawn_heli = menu.add_feature("Spawn Heli", "action", main_menu.id, functi
     native.call(0xDBC631F109350B8C, heli_veh, true)
 
     vehicle.set_vehicle_mod_kit_type(heli_veh, 0)
-    vehicle.set_vehicle_colors(heli_veh, 12, 141)
-    vehicle.set_vehicle_extra_colors(heli_veh, 62, 0)
-    vehicle.set_vehicle_window_tint(heli_veh, 1)
+
+    if color_ini:read() then
+        local _, primary = color_ini:get_i("Airtaxi","primary")
+        local _, secondary = color_ini:get_i("Airtaxi","secondary")
+        local _, pearl = color_ini:get_i("Airtaxi","pearl")
+        local _, wheels = color_ini:get_i("Airtaxi","wheels")
+        local _, windows = color_ini:get_i("Airtaxi","windows_tint")
+
+        vehicle.set_vehicle_colors(heli_veh, primary or 12, secondary or 141)
+        vehicle.set_vehicle_extra_colors(heli_veh, pearl or 62, wheels or 0)
+        vehicle.set_vehicle_window_tint(heli_veh, windows or 1)
+
+    else
+        vehicle.set_vehicle_colors(heli_veh, 12, 141)
+        vehicle.set_vehicle_extra_colors(heli_veh, 62, 0)
+        vehicle.set_vehicle_window_tint(heli_veh, 1)
+    end
 
     if heli_radio_toggle.on then
         native.call(0x3B988190C0AA6C0B, heli_veh, true)

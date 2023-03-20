@@ -117,6 +117,7 @@ local driver_alt_seat = 0
 local is_boat_active = false
 local clearing = false
 local clear_ap = false
+local color_ini = IniParser("scripts/JJS_Color_Override.ini")
 
 local function clear_jetskis()
     for k,v in pairs(boat_jetskis) do
@@ -297,9 +298,21 @@ local spawn_boat = menu.add_feature("Spawn Boat","action",main_menu.id,function(
         native.call(0x1F4ED342ACEFE62D, boat_veh, true, true)
 
         vehicle.set_vehicle_mod_kit_type(boat_veh, 0)
-        vehicle.set_vehicle_colors(boat_veh, 12, 141)
-        vehicle.set_vehicle_extra_colors(boat_veh, 62, 0)
-        vehicle.set_vehicle_window_tint(boat_veh, 1)
+
+        if color_ini:read() then
+            local _, primary = color_ini:get_i("Boat","primary")
+            local _, secondary = color_ini:get_i("Boat","secondary")
+            local _, pearl = color_ini:get_i("Boat","pearl")
+            local _, windows = color_ini:get_i("Boat","windows_tint")
+    
+            vehicle.set_vehicle_colors(boat_veh, primary or 12, secondary or 141)
+            vehicle.set_vehicle_extra_colors(boat_veh, pearl or 62, 0)
+            vehicle.set_vehicle_window_tint(boat_veh, windows or 1)
+        else
+            vehicle.set_vehicle_colors(boat_veh, 12, 141)
+            vehicle.set_vehicle_extra_colors(boat_veh, 62, 0)
+            vehicle.set_vehicle_window_tint(boat_veh, 1)
+        end
 
         native.call(0x8821196D91FA2DE5, boat_veh, true)
         native.call(0x34E710FF01247C5A, boat_veh, 2)
