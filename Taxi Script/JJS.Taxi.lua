@@ -208,6 +208,17 @@ local function get_taken_seats(veh)
     return counter
 end
 
+function front_of_pos(_pos,_rot,_dist)
+    _rot:transformRotToDir()
+    _rot = _rot * _dist
+    _pos = _pos + _rot
+    return _pos
+end
+
+function vector_to_heading(_target,_start)
+    return math.atan((_target.x - _start.x), (_target.y - _start.y)) * -180 / math.pi
+end
+
 local main_menu = menu.add_feature("#FFFFC64D#J#FFFFD375#J#FFFFE1A1#S #FFFFF8EB#Taxi", "parent", 0)
 local player_menu = menu.add_player_feature("#FFFFC64D#J#FFFFD375#J#FFFFE1A1#S #FFFFF8EB#Taxi", "parent", 0)
 
@@ -477,27 +488,13 @@ local taxi_spawn = menu.add_feature("Spawn Taxi", "action", main_menu.id, functi
         is_taxi_active = true
     end
 
-    local found, spawn_point
     local local_player = player.player_id()
     local player_pos = player.get_player_coords(local_player)
     local player_ped = player.get_player_ped(local_player)
+    local player_heading = player.get_player_heading(local_player)
 
-    local points = {}
     
-    for i1=1, 360 do
-        found, spawn_point = gameplay.find_spawn_point_in_direction(player_pos, v3(0,0,i1-180), 30)
-        if found then
-            points[#points+1] = {
-                pos= {
-                    x=spawn_point.x,
-                    y=spawn_point.y,
-                    z=spawn_point.z
-                },
-                rot=i1-180
-            }
-        end
-        system.yield(0)
-    end
+    local spawn_point = front_of_pos(player_pos, v3(0, 0, player_heading), 10)
 
     if taxi_per_veh.on then
         vehicle_hash = entity.get_entity_model_hash(player.get_personal_vehicle())
@@ -515,12 +512,11 @@ local taxi_spawn = menu.add_feature("Spawn Taxi", "action", main_menu.id, functi
 
     local seat_count = vehicle.get_vehicle_model_number_of_seats(vehicle_hash)
 
-    local s_point = table_random(points)
-    local s_pos = v3(s_point.pos.x,s_point.pos.y,s_point.pos.z)
+    local s_pos = spawn_point
     --s_pos = player_pos + v3(5,0,0)
 
     if not taxi_per_veh.on then
-        taxi_veh = vehicle.create_vehicle(vehicle_hash, s_pos + v3(0,0,2), vector_to_heading(player_pos, s_pos), true, false)
+        taxi_veh = vehicle.create_vehicle(vehicle_hash, s_pos + v3(0,0,2), player_heading+180, true, false)
     else
         taxi_veh = player.get_personal_vehicle()
     end
@@ -777,301 +773,290 @@ local taxi_spawn = menu.add_feature("Spawn Taxi", "action", main_menu.id, functi
 end)
 taxi_spawn.hint = "Spawns the taxi. Amazing isn't it?"
 
-local taxi_spawn_pl = menu.add_player_feature("Spawn Taxi", "action", player_menu.id, function(ft, tar_player)
+if false then -- DISABLED CUZ BROKEN
+    local taxi_spawn_pl = menu.add_player_feature("Spawn Taxi", "action", player_menu.id, function(ft, tar_player)
 
-    if is_taxi_active then
-        menu.notify("A taxi is already active.", "Error", nil, 0x0000FF)
-        return
-    else
-        is_taxi_active = true
-    end
-
-    local found, spawn_point
-    local local_player = player.player_id()
-    local player_pos = player.get_player_coords(local_player)
-    local player_ped = player.get_player_ped(local_player)
-
-    local tar_player_pos = player.get_player_coords(tar_player)
-    local tar_player_ped = player.get_player_ped(tar_player)
-
-
-    local points = {}
-    
-    for i1=1, 360 do
-        found, spawn_point = gameplay.find_spawn_point_in_direction(player_pos, v3(0,0,i1-180), 30)
-        if found then
-            points[#points+1] = {
-                pos= {
-                    x=spawn_point.x,
-                    y=spawn_point.y,
-                    z=spawn_point.z
-                },
-                rot=i1-180
-            }
-        end
-        system.yield(0)
-    end
-
-    if taxi_per_veh.on then
-        vehicle_hash = entity.get_entity_model_hash(player.get_personal_vehicle())
-    else
-        vehicle_hash = gameplay.get_hash_key(vehicle_name)
-
-        if not streaming.is_model_a_vehicle(vehicle_hash) then
-            vehicle_hash = tonumber(vehicle_name)
-        end
-    end
-
-    request_model(vehicle_hash)
-
-    local seat_count = vehicle.get_vehicle_model_number_of_seats(vehicle_hash)
-
-    local s_point = table_random(points)
-    local s_pos
-    if not taxi_per_veh.on then
-        s_pos = v3(s_point.pos.x,s_point.pos.y,s_point.pos.z)
-    else
-        s_pos = entity.get_entity_coords(player.get_personal_vehicle())
-    end
-    --s_pos = player_pos + v3(5,0,0)
-
-    if not taxi_per_veh.on then
-        taxi_veh = vehicle.create_vehicle(vehicle_hash, s_pos + v3(0,0,2), vector_to_heading(player_pos, s_pos), true, false)
-    else
-        taxi_veh = player.get_personal_vehicle()
-    end
-
-    system.yield(0)
-    if ent_check(taxi_veh,true) then
-        blips.taxi_veh = ui.add_blip_for_entity(taxi_veh)
-        ui.set_blip_sprite(blips.taxi_veh, 198)
-        ui.set_blip_colour(blips.taxi_veh, 2)
-    end
-    
-    if not taxi_per_veh.on then
-        vehicle.set_vehicle_mod_kit_type(taxi_veh, 0)
-
-        if color_ini:read() then
-            local _, primary = color_ini:get_i("Taxi","primary")
-            local _, secondary = color_ini:get_i("Taxi","secondary")
-            local _, pearl = color_ini:get_i("Taxi","pearl")
-            local _, wheels = color_ini:get_i("Taxi","wheels")
-            local _, windows = color_ini:get_i("Taxi","windows_tint")
-
-            vehicle.set_vehicle_colors(taxi_veh, primary or 12, secondary or 12)
-            vehicle.set_vehicle_extra_colors(taxi_veh, pearl or 64, wheels or 62)
-            vehicle.set_vehicle_window_tint(taxi_veh, windows or 1)
+        if is_taxi_active then
+            menu.notify("A taxi is already active.", "Error", nil, 0x0000FF)
+            return
         else
-            vehicle.set_vehicle_colors(taxi_veh, 12, 12)
-            vehicle.set_vehicle_extra_colors(taxi_veh, 64, 62)
-            vehicle.set_vehicle_window_tint(taxi_veh, 1)
+            is_taxi_active = true
         end
 
-        vehicle.set_vehicle_mod(taxi_veh, 11, 3)
-        vehicle.set_vehicle_mod(taxi_veh, 15, 3)
-        vehicle.set_vehicle_mod(taxi_veh, 16, 4)
-        vehicle.set_vehicle_mod(taxi_veh, 12, 2)
-        vehicle.set_vehicle_mod(taxi_veh, 18, 1)
-    end
+        local local_player = player.player_id()
+        local player_pos = player.get_player_coords(local_player)
+        local player_ped = player.get_player_ped(local_player)
+        local player_heading = player.get_player_heading(local_player)
 
-    if seat_count > 2 then
-        native.call(0xBE70724027F85BCD, taxi_veh, 0, 3)
-        native.call(0xBE70724027F85BCD, taxi_veh, 1, 3)
-    else
-        native.call(0xBE70724027F85BCD, taxi_veh, 0, 3)
-        native.call(0xBE70724027F85BCD, taxi_veh, 1, 0)
-    end
+        
+        local spawn_point = front_of_pos(player_pos, v3(0, 0, player_heading), 10)
 
 
-    local vehicle_conv = native.call(0x52F357A30698BCCE, taxi_veh, false):__tointeger()
-
-    if vehicle_conv == 1 then
-        is_vehicle_conv = true
-        print("Taxi vehicle is convertible")
-    else
-        is_vehicle_conv = false
-        print("Taxi vehicle isn't convertible")
-    end
-
-    request_model(ped_hash)
-    taxi_driver = ped.create_ped(0, ped_hash, s_pos+v3(3,0,0), 0, true, false)
-
-    system.yield(0)
-    ped.set_ped_into_vehicle(taxi_driver, taxi_veh, -1)
-
-    native.call(0x9F8AA94D6D97DBF4, taxi_driver, true)
-    native.call(0x1913FE4CBF41C463, taxi_driver, 255, true)
-    native.call(0x1913FE4CBF41C463, taxi_driver, 251, true)
-
-    streaming.set_model_as_no_longer_needed(ped_hash)
-    streaming.set_model_as_no_longer_needed(vehicle_hash)
-
-    ai.task_vehicle_follow(taxi_driver, taxi_veh, player_ped, 5, vehicle_drive_close, 10)
-    repeat
-        system.yield(250)
-    until ped.is_ped_in_vehicle(player_ped, taxi_veh) or not is_taxi_active
-    menu.notify("Welcome in JJS-Taxi!","Welcome",nil,0x00FF00)
-
-    if taxi_radio_toggle.on then
-        native.call(0x3B988190C0AA6C0B, taxi_veh, true)
-        native.call(0x1B9C0099CB942AC6, taxi_veh, radio_stations[taxi_radio.value+1].id)
-    else
-        native.call(0x3B988190C0AA6C0B, taxi_veh, false)
-    end
-
-    if is_taxi_active then
-        blips.tar_player = ui.add_blip_for_entity(tar_player_ped)
-        ui.set_blip_sprite(blips.tar_player, 58)
-        ui.set_blip_colour(blips.tar_player, 5)
-        ui.set_blip_route(blips.tar_player, true)
-        ui.set_blip_route_color(blips.tar_player, 46)
+        local tar_player_pos = player.get_player_coords(tar_player)
+        local tar_player_ped = player.get_player_ped(tar_player)
 
 
-        request_control(taxi_driver)
-        request_control(taxi_veh)
 
-        local taxi_pos1 = entity.get_entity_coords(taxi_veh)
+        if taxi_per_veh.on then
+            vehicle_hash = entity.get_entity_model_hash(player.get_personal_vehicle())
+        else
+            vehicle_hash = gameplay.get_hash_key(vehicle_name)
 
-        if GET_STREET_NAME_AT_COORD(taxi_pos1.x, taxi_pos1.y, taxi_pos1.z).name == "Runway1" then
-            request_model(vehicle_hash)
-            menu.notify("Detected inside LSIA, exiting first.","LSIA Bullshit Pathing",nil,0x00AAFF)
-            --native.call(0x195AEEB13CEFE2EE, taxi_driver, taxi_veh, lsia_exit.x, lsia_exit.y, lsia_exit.z, 30, 156, 5.0)
-            for k,v in ipairs(lsia_exit) do
-                if is_taxi_active then
-                    menu.notify("Exiting LSIA Phase "..k.."/"..#lsia_exit,"LSIA Bullshit Pathing",nil,0x00AAFF)
+            if not streaming.is_model_a_vehicle(vehicle_hash) then
+                vehicle_hash = tonumber(vehicle_name)
+            end
+        end
 
-                    ai.task_vehicle_drive_to_coord(taxi_driver, taxi_veh, v3(v.x, v.y, v.z), v.speed, 0, vehicle_hash, v.mode, 5, 10)
-                    repeat
-                        local postaxi = entity.get_entity_coords(taxi_veh)
-                
-                        local dist_x = math.abs(postaxi.x - v.x)
-                        local dist_y = math.abs(postaxi.y - v.y)
-                        local dist_z = math.abs(postaxi.z - v.z)
-                
-                        local hori_dist = dist_x+dist_y
-                        system.yield(0)
-                    until hori_dist < 20 or not is_taxi_active
-                    system.yield(500)
+        request_model(vehicle_hash)
+
+        local seat_count = vehicle.get_vehicle_model_number_of_seats(vehicle_hash)
+
+        local s_pos
+        if not taxi_per_veh.on then
+            s_pos = spawn_point
+        else
+            s_pos = entity.get_entity_coords(player.get_personal_vehicle())
+        end
+        --s_pos = player_pos + v3(5,0,0)
+
+        if not taxi_per_veh.on then
+            taxi_veh = vehicle.create_vehicle(vehicle_hash, s_pos + v3(0,0,2), player_heading+180, true, false)
+        else
+            taxi_veh = player.get_personal_vehicle()
+        end
+
+        system.yield(0)
+        if ent_check(taxi_veh,true) then
+            blips.taxi_veh = ui.add_blip_for_entity(taxi_veh)
+            ui.set_blip_sprite(blips.taxi_veh, 198)
+            ui.set_blip_colour(blips.taxi_veh, 2)
+        end
+        
+        if not taxi_per_veh.on then
+            vehicle.set_vehicle_mod_kit_type(taxi_veh, 0)
+
+            if color_ini:read() then
+                local _, primary = color_ini:get_i("Taxi","primary")
+                local _, secondary = color_ini:get_i("Taxi","secondary")
+                local _, pearl = color_ini:get_i("Taxi","pearl")
+                local _, wheels = color_ini:get_i("Taxi","wheels")
+                local _, windows = color_ini:get_i("Taxi","windows_tint")
+
+                vehicle.set_vehicle_colors(taxi_veh, primary or 12, secondary or 12)
+                vehicle.set_vehicle_extra_colors(taxi_veh, pearl or 64, wheels or 62)
+                vehicle.set_vehicle_window_tint(taxi_veh, windows or 1)
+            else
+                vehicle.set_vehicle_colors(taxi_veh, 12, 12)
+                vehicle.set_vehicle_extra_colors(taxi_veh, 64, 62)
+                vehicle.set_vehicle_window_tint(taxi_veh, 1)
+            end
+
+            vehicle.set_vehicle_mod(taxi_veh, 11, 3)
+            vehicle.set_vehicle_mod(taxi_veh, 15, 3)
+            vehicle.set_vehicle_mod(taxi_veh, 16, 4)
+            vehicle.set_vehicle_mod(taxi_veh, 12, 2)
+            vehicle.set_vehicle_mod(taxi_veh, 18, 1)
+        end
+
+        if seat_count > 2 then
+            native.call(0xBE70724027F85BCD, taxi_veh, 0, 3)
+            native.call(0xBE70724027F85BCD, taxi_veh, 1, 3)
+        else
+            native.call(0xBE70724027F85BCD, taxi_veh, 0, 3)
+            native.call(0xBE70724027F85BCD, taxi_veh, 1, 0)
+        end
+
+
+        local vehicle_conv = native.call(0x52F357A30698BCCE, taxi_veh, false):__tointeger()
+
+        if vehicle_conv == 1 then
+            is_vehicle_conv = true
+            print("Taxi vehicle is convertible")
+        else
+            is_vehicle_conv = false
+            print("Taxi vehicle isn't convertible")
+        end
+
+        request_model(ped_hash)
+        taxi_driver = ped.create_ped(0, ped_hash, s_pos+v3(3,0,0), 0, true, false)
+
+        system.yield(0)
+        ped.set_ped_into_vehicle(taxi_driver, taxi_veh, -1)
+
+        native.call(0x9F8AA94D6D97DBF4, taxi_driver, true)
+        native.call(0x1913FE4CBF41C463, taxi_driver, 255, true)
+        native.call(0x1913FE4CBF41C463, taxi_driver, 251, true)
+
+        streaming.set_model_as_no_longer_needed(ped_hash)
+        streaming.set_model_as_no_longer_needed(vehicle_hash)
+
+        ai.task_vehicle_follow(taxi_driver, taxi_veh, player_ped, 5, vehicle_drive_close, 10)
+        repeat
+            system.yield(250)
+        until ped.is_ped_in_vehicle(player_ped, taxi_veh) or not is_taxi_active
+        menu.notify("Welcome in JJS-Taxi!","Welcome",nil,0x00FF00)
+
+        if taxi_radio_toggle.on then
+            native.call(0x3B988190C0AA6C0B, taxi_veh, true)
+            native.call(0x1B9C0099CB942AC6, taxi_veh, radio_stations[taxi_radio.value+1].id)
+        else
+            native.call(0x3B988190C0AA6C0B, taxi_veh, false)
+        end
+
+        if is_taxi_active then
+            blips.tar_player = ui.add_blip_for_entity(tar_player_ped)
+            ui.set_blip_sprite(blips.tar_player, 58)
+            ui.set_blip_colour(blips.tar_player, 5)
+            ui.set_blip_route(blips.tar_player, true)
+            ui.set_blip_route_color(blips.tar_player, 46)
+
+
+            request_control(taxi_driver)
+            request_control(taxi_veh)
+
+            local taxi_pos1 = entity.get_entity_coords(taxi_veh)
+
+            if GET_STREET_NAME_AT_COORD(taxi_pos1.x, taxi_pos1.y, taxi_pos1.z).name == "Runway1" then
+                request_model(vehicle_hash)
+                menu.notify("Detected inside LSIA, exiting first.","LSIA Bullshit Pathing",nil,0x00AAFF)
+                --native.call(0x195AEEB13CEFE2EE, taxi_driver, taxi_veh, lsia_exit.x, lsia_exit.y, lsia_exit.z, 30, 156, 5.0)
+                for k,v in ipairs(lsia_exit) do
+                    if is_taxi_active then
+                        menu.notify("Exiting LSIA Phase "..k.."/"..#lsia_exit,"LSIA Bullshit Pathing",nil,0x00AAFF)
+
+                        ai.task_vehicle_drive_to_coord(taxi_driver, taxi_veh, v3(v.x, v.y, v.z), v.speed, 0, vehicle_hash, v.mode, 5, 10)
+                        repeat
+                            local postaxi = entity.get_entity_coords(taxi_veh)
+                    
+                            local dist_x = math.abs(postaxi.x - v.x)
+                            local dist_y = math.abs(postaxi.y - v.y)
+                            local dist_z = math.abs(postaxi.z - v.z)
+                    
+                            local hori_dist = dist_x+dist_y
+                            system.yield(0)
+                        until hori_dist < 20 or not is_taxi_active
+                        system.yield(500)
+                    end
                 end
+                if is_taxi_active then
+                    menu.notify("Finally out of this mess.. Driving to destination now.","LSIA Bullshit Pathing",nil,0x00FF00)
+                end
+                streaming.set_model_as_no_longer_needed(vehicle_hash)
             end
-            if is_taxi_active then
-                menu.notify("Finally out of this mess.. Driving to destination now.","LSIA Bullshit Pathing",nil,0x00FF00)
+
+            ai.task_vehicle_follow(taxi_driver, taxi_veh, tar_player_ped, 5, vehicle_drive, (taxi_dist/2))
+            system.yield(250)
+            ai.task_vehicle_follow(taxi_driver, taxi_veh, tar_player_ped, 5, vehicle_drive, (taxi_dist/2))
+        end
+
+        last_drive = {
+            type="follow",
+            driver=taxi_driver,
+            veh=taxi_veh,
+            dest=tar_player_ped,
+            speed=vehicle_speed,
+            mode=vehicle_drive,
+            dist=(taxi_dist/2)
+        }
+
+        if taxi_conv.value == 0 then
+            if is_vehicle_conv and native.call(0x96695E368AD855F3):__tonumber() < 0.1 then
+                native.call(0xDED51F703D0FA83D, taxi_veh, false)
+                repeat
+                    system.yield(250)
+                until native.call(0xF8C397922FC03F41, taxi_veh):__tointeger() == 2
             end
-            streaming.set_model_as_no_longer_needed(vehicle_hash)
-        end
-
-        ai.task_vehicle_follow(taxi_driver, taxi_veh, tar_player_ped, 5, vehicle_drive, (taxi_dist/2))
-        system.yield(250)
-        ai.task_vehicle_follow(taxi_driver, taxi_veh, tar_player_ped, 5, vehicle_drive, (taxi_dist/2))
-    end
-
-    last_drive = {
-        type="follow",
-        driver=taxi_driver,
-        veh=taxi_veh,
-        dest=tar_player_ped,
-        speed=vehicle_speed,
-        mode=vehicle_drive,
-        dist=(taxi_dist/2)
-    }
-
-    if taxi_conv.value == 0 then
-        if is_vehicle_conv and native.call(0x96695E368AD855F3):__tonumber() < 0.1 then
-            native.call(0xDED51F703D0FA83D, taxi_veh, false)
-            repeat
-                system.yield(250)
-            until native.call(0xF8C397922FC03F41, taxi_veh):__tointeger() == 2
-        end
-    elseif taxi_conv.value == 1 then
-        if is_vehicle_conv then
-            native.call(0xDED51F703D0FA83D, taxi_veh, false)
-            repeat
-                system.yield(250)
-            until native.call(0xF8C397922FC03F41, taxi_veh):__tointeger() == 2
-        end
-    elseif taxi_conv.value == 2 then
-        if is_vehicle_conv then
-            native.call(0x8F5FB35D7E88FC70, taxi_veh, false)
-            repeat
-                system.yield(250)
-            until native.call(0xF8C397922FC03F41, taxi_veh):__tointeger() == 0
-        end
-    end
-
-    resume_last_drive()
-
-    while true do
-        local postaxi = entity.get_entity_coords(taxi_veh)
-
-        local dist_x = math.abs(postaxi.x - tar_player_pos.x)
-        local dist_y = math.abs(postaxi.y - tar_player_pos.y)
-        local dist_z = math.abs(postaxi.z - tar_player_pos.z)
-
-        local hori_dist = dist_x+dist_y
-
-        if hori_dist < (last_drive.dist*2) then
-
-            native.call(0x684785568EF26A22, taxi_veh, true)
-            native.call(0xE4E2FD323574965C, taxi_veh, true)
-
-
-            repeat
-                system.yield(0)
-            until entity.get_entity_speed(taxi_veh) < 8
-
-            menu.notify("Arrived to Destination","Success",nil,0x00FF00)
-            print("Taxi Arrived to Destination")
-
-            repeat
-                ai.task_leave_vehicle(taxi_driver, taxi_veh, 64)
-                system.yield(500)
-            until not ped.is_ped_in_vehicle(taxi_driver, taxi_veh)
-
-            vehicle.set_vehicle_engine_on(taxi_veh, false, false, false)
+        elseif taxi_conv.value == 1 then
+            if is_vehicle_conv then
+                native.call(0xDED51F703D0FA83D, taxi_veh, false)
+                repeat
+                    system.yield(250)
+                until native.call(0xF8C397922FC03F41, taxi_veh):__tointeger() == 2
+            end
+        elseif taxi_conv.value == 2 then
             if is_vehicle_conv then
                 native.call(0x8F5FB35D7E88FC70, taxi_veh, false)
                 repeat
                     system.yield(250)
                 until native.call(0xF8C397922FC03F41, taxi_veh):__tointeger() == 0
             end
+        end
 
-            vehicle.start_vehicle_horn(taxi_veh, 1500, 0, false)
-            system.yield(300)
-            vehicle.start_vehicle_horn(taxi_veh, 1500, 0, false)
-            system.yield(300)
-            vehicle.start_vehicle_horn(taxi_veh, 1500, 0, false)
+        resume_last_drive()
 
-            if not taxi_per_veh.on then
+        while true do
+            local postaxi = entity.get_entity_coords(taxi_veh)
+
+            local dist_x = math.abs(postaxi.x - tar_player_pos.x)
+            local dist_y = math.abs(postaxi.y - tar_player_pos.y)
+            local dist_z = math.abs(postaxi.z - tar_player_pos.z)
+
+            local hori_dist = dist_x+dist_y
+
+            if hori_dist < (last_drive.dist*2) then
+
+                native.call(0x684785568EF26A22, taxi_veh, true)
+                native.call(0xE4E2FD323574965C, taxi_veh, true)
+
+
                 repeat
                     system.yield(0)
-                until get_taken_seats(taxi_veh) == 0
-            else
-                vehicle.set_vehicle_doors_locked(taxi_veh, 1)
+                until entity.get_entity_speed(taxi_veh) < 8
+
+                menu.notify("Arrived to Destination","Success",nil,0x00FF00)
+                print("Taxi Arrived to Destination")
+
+                repeat
+                    ai.task_leave_vehicle(taxi_driver, taxi_veh, 64)
+                    system.yield(500)
+                until not ped.is_ped_in_vehicle(taxi_driver, taxi_veh)
+
+                vehicle.set_vehicle_engine_on(taxi_veh, false, false, false)
+                if is_vehicle_conv then
+                    native.call(0x8F5FB35D7E88FC70, taxi_veh, false)
+                    repeat
+                        system.yield(250)
+                    until native.call(0xF8C397922FC03F41, taxi_veh):__tointeger() == 0
+                end
+
+                vehicle.start_vehicle_horn(taxi_veh, 1500, 0, false)
+                system.yield(300)
+                vehicle.start_vehicle_horn(taxi_veh, 1500, 0, false)
+                system.yield(300)
+                vehicle.start_vehicle_horn(taxi_veh, 1500, 0, false)
+
+                if not taxi_per_veh.on then
+                    repeat
+                        system.yield(0)
+                    until get_taken_seats(taxi_veh) == 0
+                else
+                    vehicle.set_vehicle_doors_locked(taxi_veh, 1)
+                end
+
+                native.call(0x684785568EF26A22, taxi_veh, false)
+                native.call(0xE4E2FD323574965C, taxi_veh, false)
+
+                native.call(0x3B988190C0AA6C0B, taxi_veh, true)
+
+                system.yield(3000)
+
+                if not taxi_per_veh.on then
+                    native.call(0xDE564951F95E09ED, taxi_veh, true, true)
+                end 
+
+                native.call(0xDE564951F95E09ED, taxi_driver, true, true)
+                system.yield(2000)
+
+                clear_all(nil,true,true)
+                menu.notify("Thanks you for using JJS-Taxi!","Thanks You",nil,0xc203fc)
+                break
             end
-
-            native.call(0x684785568EF26A22, taxi_veh, false)
-            native.call(0xE4E2FD323574965C, taxi_veh, false)
-
-            native.call(0x3B988190C0AA6C0B, taxi_veh, true)
-
-            system.yield(3000)
-
-            if not taxi_per_veh.on then
-                native.call(0xDE564951F95E09ED, taxi_veh, true, true)
-            end 
-
-            native.call(0xDE564951F95E09ED, taxi_driver, true, true)
-            system.yield(2000)
-
-            clear_all(nil,true,true)
-            menu.notify("Thanks you for using JJS-Taxi!","Thanks You",nil,0xc203fc)
-            break
+            system.yield(0)
+            if not is_taxi_active then break end
         end
-        system.yield(0)
-        if not is_taxi_active then break end
-    end
-end)
-taxi_spawn_pl.hint = ("Spawns the taxi, will try to follow the player")
+    end)
+    taxi_spawn_pl.hint = ("Spawns the taxi, will try to follow the player")
+end
 
 local taxi_status = menu.add_feature("Status: ", "action", main_menu.id, function()
 end)
