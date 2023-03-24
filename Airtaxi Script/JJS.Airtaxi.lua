@@ -315,12 +315,20 @@ local preset_waypoints = {
             x=393.222,
             y=-66.257
         }
+    },
+    ["Misc."] = {
+        {
+            name="Diamond Casino",
+            x=965.860,
+            y=42.275
+        }
     }
 }
 
 local preset_load_order = {
     "Offices",
-    "Agencies"
+    "Agencies",
+    "Misc."
 }
 
 
