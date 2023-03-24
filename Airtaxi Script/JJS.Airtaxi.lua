@@ -271,9 +271,72 @@ local function can_rappel(name)
     return false
 end
 
+local preset_waypoints = {
+    ["Offices"] = {
+        {
+            name="Maze Bank Tower",
+            x=-75.224,
+            y=-819.184
+        },
+        {
+            name="Arcadius Business Center",
+            x=-144.559,
+            y=-593.671
+        },
+        {
+            name="Maze Bank West",
+            x=-1391.489,
+            y=-477.708
+        },
+        {
+            name="Lombank West",
+            x=-1581.939,
+            y=-569.624
+        }
+    },
+    ["Agencies"] = {
+        {
+            name="Little Seoul Agency",
+            x=-597.717,
+            y=-716.850
+        },
+        {
+            name="Vespucci Canals Agency",
+            x=-1010.807,
+            y=-756.890
+        },
+        {
+            name="Rockford Hills Agency",
+            x=-1007.772,
+            y=-415.805
+        },
+        {
+            name="Hawick Agency",
+            x=393.222,
+            y=-66.257
+        }
+    }
+}
+
+local preset_load_order = {
+    "Offices",
+    "Agencies"
+}
+
 
 local main_menu = menu.add_feature("#FFFFC64D#J#FFFFD375#J#FFFFE1A1#S #FFFFF8EB#Airtaxi", "parent", 0)
 
+local pre_set_wp = menu.add_feature("Preset Waypoints", "parent", main_menu.id)
+
+for _, category in ipairs(preset_load_order) do
+    local list = preset_waypoints[category]
+    local new_category = menu.add_feature(category, "parent", pre_set_wp.id)
+    for num, v in ipairs(list) do
+        menu.add_feature(v.name, "action", new_category.id, function()
+            ui.set_new_waypoint(v2(v.x, v.y))
+        end)
+    end
+end
 
 local heli_hoveratdest = menu.add_feature("Keep Hovering", "toggle", main_menu.id, function(ft)
     if heli_rappeldown2 then
@@ -563,7 +626,7 @@ local spawn_heli = menu.add_feature("Spawn Heli", "action", main_menu.id, functi
         notify("Landing at dest..","Landing",nil,0x00AAFF)
         request_control(heli_veh)
         request_control(heli_ped)
-        native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z, 4, 20.0, 20.0, -1, 50, 5, 1.0, 32+64+4096)
+        native.call(0xDAD029E187A2BEB4, heli_ped, heli_veh, 0, 0, wp3.x, wp3.y, wp3.z, 4, 30.0, 5.0, -1, 50, 5, 0.0, 32+64+4096)
 
         repeat
             system.yield(0)
