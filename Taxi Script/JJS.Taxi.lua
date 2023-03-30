@@ -516,7 +516,7 @@ local taxi_spawn = menu.add_feature("Spawn Taxi", "action", main_menu.id, functi
     --s_pos = player_pos + v3(5,0,0)
 
     if not taxi_per_veh.on then
-        taxi_veh = vehicle.create_vehicle(vehicle_hash, s_pos + v3(0,0,2), player_heading+180, true, false)
+        taxi_veh = vehicle.create_vehicle(vehicle_hash, s_pos + v3(0,0,2), player_heading, true, false)
     else
         taxi_veh = player.get_personal_vehicle()
     end
