@@ -445,7 +445,6 @@ local function clear_all(delay,peds,vehicles)
             ui.remove_blip(v)
             system.yield(0)
         until native.call(0xE41CA53051197A27, v):__tointeger() == 0
-        blips = {}
     end
 
     local attempts = 0

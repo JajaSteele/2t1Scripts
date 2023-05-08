@@ -560,6 +560,9 @@ local spawn_heli = menu.add_feature("Spawn Heli", "action", main_menu.id, functi
         system.yield(0)
     end
 
+    request_control(heli_ped)
+    native.call(0xE1EF3C1216AFF2CD, heli_ped)
+
     repeat
         system.yield(0)
         vehicle.set_heli_blades_speed(heli_veh, 0.5)
