@@ -75,6 +75,9 @@ local toreador = 0
 local boat = 0
 local boat_pilot = 0
 
+local extboat = 0
+local extboat_pilot = 0
+
 local blips = {}
 
 local sub_veh = 0
@@ -84,6 +87,8 @@ local vehicle_drive_careful = 16777728
 local boat_drive = 16777275
 
 local boat_dest_ent = 0
+local boat_dest_ent2 = 0
+local extboat_dest_ent = 0
 
 local autopilot_speed = 80.0
 local autopilot_depth = -2.0
@@ -120,7 +125,17 @@ local beach_locations = {
     {x = -2520.42, y = 4240.6714, z = 0},
     {x = -909.632, y = 5830.909, z = 0},
     {x = -325.109, y = 6584.622, z = 0},
-    {x = -325.109, y = 6584.622, z = 0}
+    {x = -325.109, y = 6584.622, z = 0},
+    {x = -2775.0, y = 2597.0, z = 0},
+    {x = -2950.2946777344, y = 3003.8515625, z = 0.0},
+    {x = -2606.4995117188, y = 3896.0046386719, z = 0.0},
+    {x = -617.99377441406, y = 6421.396484375, z = 0.0},
+    {x = 2491.4553222656, y = 6645.892578125, z = 0.0},
+    {x = 3980.8193359375, y = 4010.240234375, z = 0.0},
+    {x = 3235.1391601562, y = 2053.9506835938, z = 0.0},
+    {x = 2983.0793457031, y = 714.33325195312, z = 0.0},
+    {x = -2127.4680175781, y = -602.19708251953, z = 0.0},
+    {x = -2545.6918945312, y = -292.43606567383, z = 0.0},
 }
 
 local function sort_by_dist(a,b)
@@ -207,6 +222,7 @@ local main = menu.add_feature("#FFFFC64D#J#FFFFD375#J#FFFFE1A1#S #FFFFF8EB#Kosat
 local ap_kosatka = menu.add_feature("Kosatka AP", "parent", main.id)
 local ap_toreador = menu.add_feature("Toreador AP", "parent", main.id)
 local ap_boat = menu.add_feature("Boarding-Boat AP", "parent", main.id)
+local ap_boat2 = menu.add_feature("Exit-Boat AP", "parent", main.id)
 
 local register_sub = menu.add_feature("Register Kosatka [0]", "action", main.id, function(ft)
     local find = find_veh(760)
@@ -487,7 +503,7 @@ local kill_toreador = menu.add_feature("Kill Toreador", "action", ap_toreador.id
     entity.delete_entity(toreador)
 end)
 
-local spawn_boat_ap = menu.add_feature("Spawn Boat", "action", ap_boat.id, function(ft)
+local spawn_boat_ap = menu.add_feature("Call Boat", "action", ap_boat.id, function(ft)
     if kosatka_registered then
         local sub_pos = entity.get_entity_coords(sub_veh)
         local sub_dir = entity.get_entity_heading(sub_veh)
@@ -531,6 +547,7 @@ local spawn_boat_ap = menu.add_feature("Spawn Boat", "action", ap_boat.id, funct
             end
         end)
 
+        request_model(ped_hash)
         boat_pilot = native.call(0x7DD959874C1FD534, boat, 0, ped_hash, -1, true, false):__tointeger()
 
         native.call(0x1F4ED342ACEFE62D, boat_pilot, true, true)
@@ -584,14 +601,34 @@ local spawn_boat_ap = menu.add_feature("Spawn Boat", "action", ap_boat.id, funct
             request_control(boat_dest_ent)
             entity.delete_entity(boat_dest_ent)
 
-            ai.task_vehicle_follow(boat_pilot, boat, sub_veh, 30.0, boat_drive, 20)
+
+            local sub_pos = entity.get_entity_coords(sub_veh)
+            local sub_dir = entity.get_entity_heading(sub_veh)
+
+            entity.delete_entity(boat_dest_ent2)
+
+            local dest_ent_hash = gameplay.get_hash_key("prop_dock_float_1b")
+            boat_dest_ent2 = object.create_object(dest_ent_hash, front_of_pos(sub_pos, v3(0,0,sub_dir), 60), true, true)
+
+            blips.boat_dest_ent2 = ui.add_blip_for_entity(boat_dest_ent2)
+            ui.set_blip_sprite(blips.boat_dest_ent2, 432)
+
+            native.call(0xF9113A30DE5C6670, "STRING")
+            native.call(0x6C188BE134E074AA, "Boat Drop-off Location")
+            native.call(0xBC38B49BCB83BC9B, blips.boat_dest_ent2)
+
+            ai.task_vehicle_follow(boat_pilot, boat, boat_dest_ent2, 30.0, boat_drive, 15)
             while true do
                 system.yield(0)
-                if entity.get_entity_coords(boat):magnitude(entity.get_entity_coords(sub_veh)) < 20 and get_taken_seats(boat) == 1 then
+                if entity.get_entity_coords(boat):magnitude(entity.get_entity_coords(boat_dest_ent2)) < 20 and get_taken_seats(boat) == 1 then
                     break
                 end
             end
             system.yield(2000)
+
+            request_control(boat_dest_ent2)
+            entity.delete_entity(boat_dest_ent2)
+
             request_control(boat)
             request_control(boat_pilot)
             native.call(0xDE564951F95E09ED, boat, true, true)
@@ -606,9 +643,160 @@ local spawn_boat_ap = menu.add_feature("Spawn Boat", "action", ap_boat.id, funct
         menu.notify("#FF00AAFF#Kosatka isn't registered properly!","JJS.KosatkaAP", nil, 0x0000FF)
     end
 end)
+spawn_boat_ap.hint = "Spawns a boat that goes to nearest shore, then back to kosatka"
 
 local kill_boat = menu.add_feature("Kill Boat", "action", ap_boat.id, function(ft)
     entity.delete_entity(vehicle.get_ped_in_vehicle_seat(boat, -1) or 0)
     entity.delete_entity(boat)
     entity.delete_entity(boat_dest_ent)
+    entity.delete_entity(boat_dest_ent2)
 end)
+
+local spawn_extboat_ap = menu.add_feature("Boat to WP", "action", ap_boat2.id, function(ft)
+    if kosatka_registered then
+        local sub_pos = entity.get_entity_coords(sub_veh)
+        local sub_dir = entity.get_entity_heading(sub_veh)
+
+        local local_player = player.player_id()
+        local player_ped = player.get_player_ped(local_player)
+        local pl_pos = player.get_player_coords(local_player)
+
+        local spawn_pos = front_of_pos(sub_pos, v3(0,0,sub_dir), 60)
+        request_model(boat_hash)
+        extboat = vehicle.create_vehicle(boat_hash, spawn_pos, sub_dir, true, false)
+
+        native.call(0x1F4ED342ACEFE62D, extboat, true, true)
+        vehicle.set_vehicle_mod_kit_type(extboat, 0)
+
+        vehicle.set_vehicle_colors(extboat, 112, 12)
+        vehicle.set_vehicle_extra_colors(extboat, 67, 62)
+        vehicle.set_vehicle_window_tint(extboat, 1)
+
+        vehicle.set_vehicle_mod(extboat, 11, 3)
+        vehicle.set_vehicle_mod(extboat, 15, 3)
+        vehicle.set_vehicle_mod(extboat, 16, 4)
+        vehicle.set_vehicle_mod(extboat, 12, 2)
+        vehicle.set_vehicle_mod(extboat, 18, 1)
+
+        blips.extboat = ui.add_blip_for_entity(extboat)
+        ui.set_blip_sprite(blips.extboat, 427)
+
+        native.call(0xF9113A30DE5C6670, "STRING")
+        native.call(0x6C188BE134E074AA, "Kosatka Travel Boat")
+        native.call(0xBC38B49BCB83BC9B, blips.extboat)
+
+        menu.create_thread(function()
+            local extboat = extboat
+            while entity.is_an_entity(extboat) do
+                local heading = entity.get_entity_heading(extboat)
+                native.call(0xA8B6AFDAC320AC87, blips.extboat, heading)
+                system.yield(0)
+            end
+        end)
+
+        request_model(ped_hash)
+        extboat_pilot = native.call(0x7DD959874C1FD534, extboat, 0, ped_hash, -1, true, false):__tointeger()
+
+        native.call(0x1F4ED342ACEFE62D, extboat_pilot, true, true)
+
+        native.call(0x9F8AA94D6D97DBF4, extboat_pilot, true)
+        native.call(0x1913FE4CBF41C463, extboat_pilot, 255, true)
+        native.call(0x1913FE4CBF41C463, extboat_pilot, 251, true)
+
+        menu.create_thread(function()
+            local extboat = extboat
+            local player_ped = player_ped
+
+            local counter = 0
+            while true do
+                system.yield(0)
+                if ped.is_ped_in_vehicle(player_ped, extboat) then
+                    counter = counter+1
+                else
+                    counter = 0
+                end
+                if counter > 120 then
+                    break
+                end
+            end
+
+            local wp = ui.get_waypoint_coord()
+
+            if wp == v2(16000.0, 16000.0) then
+                repeat
+                    system.yield(0)
+                    wp = ui.get_waypoint_coord()
+                until wp ~= v2(16000.0, 16000.0)
+            end
+
+            local wp3 = v3(wp.x, wp.y, 0)
+
+            entity.delete_entity(extboat_dest_ent)
+
+            local dest_ent_hash = gameplay.get_hash_key("prop_dock_float_1b")
+            extboat_dest_ent = object.create_object(dest_ent_hash, wp3, true, true)
+
+            blips.extboat_dest_ent = ui.add_blip_for_entity(extboat_dest_ent)
+            ui.set_blip_sprite(blips.extboat_dest_ent, 432)
+
+            native.call(0xF9113A30DE5C6670, "STRING")
+            native.call(0x6C188BE134E074AA, "Boat Destination")
+            native.call(0xBC38B49BCB83BC9B, blips.extboat_dest_ent)
+
+            request_control(extboat_pilot)
+            ai.task_vehicle_follow(extboat_pilot, extboat, extboat_dest_ent, 30.0, boat_drive, 10)
+
+            while true do
+                system.yield(0)
+                if entity.get_entity_coords(extboat):magnitude(entity.get_entity_coords(extboat_dest_ent)) < 10 and get_taken_seats(extboat) == 1 then
+                    break
+                end
+            end
+            request_control(extboat_dest_ent)
+            entity.delete_entity(extboat_dest_ent)
+            system.yield(2000)
+            request_control(extboat)
+            request_control(extboat_pilot)
+            native.call(0xDE564951F95E09ED, extboat, true, true)
+            native.call(0xDE564951F95E09ED, extboat_pilot, true, true)
+            system.yield(2000)
+            request_control(extboat)
+            request_control(extboat_pilot)
+            entity.delete_entity(extboat_pilot)
+            entity.delete_entity(extboat)
+        end)
+    else
+        menu.notify("#FF00AAFF#Kosatka isn't registered properly!","JJS.KosatkaAP", nil, 0x0000FF)
+    end
+end)
+
+local kill_extboat = menu.add_feature("Kill Boat", "action", ap_boat2.id, function(ft)
+    entity.delete_entity(vehicle.get_ped_in_vehicle_seat(extboat, -1) or 0)
+    entity.delete_entity(extboat)
+    entity.delete_entity(extboat_dest_ent)
+end)
+
+if ini_cfg:get_b("Toggles","debug_menu") then
+    local debug = menu.add_feature("Debug", "parent", main.id)
+    local show_all_shores = menu.add_feature("Show all beaches", "action", debug.id, function()
+        for k,v in pairs(beach_locations) do
+            local new_blip = ui.add_blip_for_coord(v3(v.x, v.y, v.z))
+            ui.set_blip_sprite(new_blip, 432)
+            native.call(0xF9113A30DE5C6670, "STRING")
+            native.call(0x6C188BE134E074AA, "Beach Location n°"..k)
+            native.call(0xBC38B49BCB83BC9B, new_blip)
+        end
+    end)
+    local coord_to_cb = menu.add_feature("Put coords to Clipboard", "action", debug.id, function()
+        local local_player = player.player_id()
+        local pl_pos = player.get_player_coords(local_player)
+
+        utils.to_clipboard("{x = "..pl_pos.x..", y = "..pl_pos.y..", z = "..pl_pos.z.."},")
+    end)
+    local coord_to_cb0 = menu.add_feature("Put coords to Clipboard (Z = 0)", "action", debug.id, function()
+        local local_player = player.player_id()
+        local pl_pos = player.get_player_coords(local_player)
+
+        utils.to_clipboard("{x = "..pl_pos.x..", y = "..pl_pos.y..", z = "..(0.0).."},")
+    end)
+end
