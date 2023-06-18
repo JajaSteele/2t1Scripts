@@ -279,7 +279,7 @@ menu.create_thread(function()
             end
             if reg_notify then
                 if auto_register.on then
-                    menu.notify("#FF00AAFF#Kosatka un-registered! (Entity died/got removed)\n#FF0077CC#(Auto-Register is enabled, your kosatka will be automatically registered after being requested and detected!)","JJS.KosatkaAP", nil, 0x0000FF)
+                    menu.notify("#FF00AAFF#Kosatka un-registered! (Entity died/got removed)\n#FF0077CC#(Auto-Register is enabled, your kosatka will be automatically registered after being detected!)","JJS.KosatkaAP", nil, 0x0000FF)
                 else
                     menu.notify("#FF00AAFF#Kosatka un-registered! (Entity died/got removed)","JJS.KosatkaAP", nil, 0x0000FF)
                 end
@@ -575,7 +575,8 @@ local spawn_boat_ap = menu.add_feature("Call Boat", "action", ap_boat.id, functi
 
         local spawn_pos = front_of_pos(sub_pos, v3(0,0,vector_to_heading(closest_node, sub_pos)), 90)
         request_model(boat_hash)
-        boat = vehicle.create_vehicle(boat_hash, spawn_pos, sub_dir, true, false)
+        boat = vehicle.create_vehicle(boat_hash, v3(spawn_pos.x, spawn_pos.y, 0.0), sub_dir, true, false)
+        entity.set_entity_as_mission_entity(boat, true, true)
 
         native.call(0x1F4ED342ACEFE62D, boat, true, true)
         vehicle.set_vehicle_mod_kit_type(boat, 0)
@@ -608,6 +609,7 @@ local spawn_boat_ap = menu.add_feature("Call Boat", "action", ap_boat.id, functi
 
         request_model(ped_hash)
         boat_pilot = native.call(0x7DD959874C1FD534, boat, 0, ped_hash, -1, true, false):__tointeger()
+        entity.set_entity_as_mission_entity(boat_pilot, true, true)
 
         native.call(0x1F4ED342ACEFE62D, boat_pilot, true, true)
 
@@ -666,8 +668,10 @@ local spawn_boat_ap = menu.add_feature("Call Boat", "action", ap_boat.id, functi
 
             entity.delete_entity(boat_dest_ent2)
 
+            local dest2_spawnpos = front_of_pos(sub_pos, v3(0,0,sub_dir), 60)
+
             local dest_ent_hash = gameplay.get_hash_key("prop_dock_float_1b")
-            boat_dest_ent2 = object.create_object(dest_ent_hash, front_of_pos(sub_pos, v3(0,0,sub_dir), 60), true, true)
+            boat_dest_ent2 = object.create_object(dest_ent_hash, v3(dest2_spawnpos.x, dest2_spawnpos.y, 0.0), true, true)
 
             blips.boat_dest_ent2 = ui.add_blip_for_entity(boat_dest_ent2)
             ui.set_blip_sprite(blips.boat_dest_ent2, 432)
@@ -722,7 +726,8 @@ local spawn_extboat_ap = menu.add_feature("Boat to WP", "action", ap_boat2.id, f
 
         local spawn_pos = front_of_pos(sub_pos, v3(0,0,sub_dir), 60)
         request_model(boat_hash)
-        extboat = vehicle.create_vehicle(boat_hash, spawn_pos, sub_dir, true, false)
+        extboat = vehicle.create_vehicle(boat_hash, v3(spawn_pos.x, spawn_pos.y, 0.0), sub_dir, true, false)
+        entity.set_entity_as_mission_entity(extboat, true, true)
 
         native.call(0x1F4ED342ACEFE62D, extboat, true, true)
         vehicle.set_vehicle_mod_kit_type(extboat, 0)
@@ -755,6 +760,7 @@ local spawn_extboat_ap = menu.add_feature("Boat to WP", "action", ap_boat2.id, f
 
         request_model(ped_hash)
         extboat_pilot = native.call(0x7DD959874C1FD534, extboat, 0, ped_hash, -1, true, false):__tointeger()
+        entity.set_entity_as_mission_entity(extboat_pilot, true, true)
 
         native.call(0x1F4ED342ACEFE62D, extboat_pilot, true, true)
 
@@ -834,6 +840,21 @@ local kill_extboat = menu.add_feature("Kill Boat", "action", ap_boat2.id, functi
     entity.delete_entity(vehicle.get_ped_in_vehicle_seat(extboat, -1) or 0)
     entity.delete_entity(extboat)
     entity.delete_entity(extboat_dest_ent)
+end)
+
+local stats = menu.add_feature("Kosatka Stats", "action", main.id)
+
+menu.create_thread(function()
+    while true do
+        if kosatka_registered then
+            local sub_pos = entity.get_entity_coords(sub_veh)
+            local sub_dir = entity.get_entity_heading(sub_veh)
+            stats.hint = "#FFFFFFFF#Submarine Stats \n#DEFAULT#Pos:".." X"..sub_pos.x.." Y"..sub_pos.y.." Z"..sub_pos.z.." \nHeading: "..(sub_dir+180).." \nPilot: "..vehicle.get_ped_in_vehicle_seat(sub_veh,-1)
+        else
+            stats.hint = "#FF00AAFF#Kosatka not registered!"
+        end
+        system.yield(0)
+    end
 end)
 
 if ini_cfg:get_b("Toggles","debug_menu") then
