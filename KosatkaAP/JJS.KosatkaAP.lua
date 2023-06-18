@@ -95,6 +95,9 @@ local autopilot_depth = -2.0
 
 local kosatka_registered = false
 
+local is_diving = false
+local is_ap = false
+
 local ini_cfg = IniParser("scripts/JJS.KosatkaAP.ini")
 ini_cfg:read()
 
@@ -301,69 +304,125 @@ local speed_override = menu.add_feature("Speed Override", "toggle", ap_kosatka.i
 
 local ap_wp_start = menu.add_feature("AP to WP", "action", ap_kosatka.id, function(ft)
     if kosatka_registered then
-        request_model(ped_hash)
-        ped.clear_ped_tasks_immediately(vehicle.get_ped_in_vehicle_seat(sub_veh, -1) or 0)
-        system.yield(0)
-        sub_pilot = native.call(0x7DD959874C1FD534, sub_veh, 0, ped_hash, -1, true, false):__tointeger()
-        native.call(0x9F8AA94D6D97DBF4, sub_pilot, true)
-        system.yield(0)
-        local dest_pos = ui.get_waypoint_coord()
-        local dest_z = get_ground(dest_pos)
-        local dest_v3 = v3(dest_pos.x, dest_pos.y, autopilot_depth)
-        request_control(sub_pilot)
-        request_control(sub_veh)
-        --native.call(0xE2A2AA2F659D77A7, sub_pilot, sub_veh, dest_v3.x, dest_v3.y, -4.0, 100.0, 0, entity.get_entity_model_hash(sub_veh), vehicle_drive, 100.0, 10.0)
-        --native.call(0x15C86013127CE63F, sub_pilot, sub_veh, 0, 0, dest_v3.x, dest_v3.y, -4.0, 4, autopilot_speed, vehicle_drive, 50.0, 0)
-        native.call(0xC22B40579A498CA4, sub_pilot, sub_veh, dest_v3.x, dest_v3.y, autopilot_depth, true)
-        system.yield(0)
-        native.call(0x5C9B84BD7D31D908, sub_pilot, 300.0)
-        if speed_override.on then
-            native.call(0xBAA045B4E42F3C06, sub_veh, 300.0)
-            native.call(0x0E46A3FCBDE2A1B1, sub_veh, 300.0)
-
-        else
-            native.call(0xBAA045B4E42F3C06, sub_veh, 0.0)
-        end
-        native.call(0x75DBEC174AEEAD10, sub_veh, false)
-        native.call(0xC67DB108A9ADE3BE, sub_veh, true)
-        local sub_pos = entity.get_entity_coords(sub_veh)
-        vehicle.set_vehicle_forward_speed(sub_veh, 20)
-        entity.freeze_entity(sub_veh, true)
-        system.yield(0)
-        entity.freeze_entity(sub_veh, false)
-        menu.create_thread(function()
-            local dest = dest_v3
-            while true do
-                local sub_pos = entity.get_entity_coords(sub_veh)
-                if sub_pos:magnitude(dest) < 100 and entity.get_entity_speed(sub_veh) < 5 then
-                    break
-                end
-                system.yield(0)
-            end
-            local pilot = vehicle.get_ped_in_vehicle_seat(sub_veh, -1) or 0
-            request_control(sub_pilot)
-            ped.clear_ped_tasks_immediately(pilot)
+        if not is_diving then
+            is_ap = true
+            request_model(ped_hash)
+            ped.clear_ped_tasks_immediately(vehicle.get_ped_in_vehicle_seat(sub_veh, -1) or 0)
             system.yield(0)
-            entity.delete_entity(pilot)
-            menu.notify("Kosatka reached destination", "KosatkaAP")
-            native.call(0xBAA045B4E42F3C06, sub_veh, 0.0)
-        end)
+            sub_pilot = native.call(0x7DD959874C1FD534, sub_veh, 0, ped_hash, -1, true, false):__tointeger()
+            native.call(0x9F8AA94D6D97DBF4, sub_pilot, true)
+            system.yield(0)
+            local dest_pos = ui.get_waypoint_coord()
+            local dest_z = get_ground(dest_pos)
+            local dest_v3 = v3(dest_pos.x, dest_pos.y, autopilot_depth)
+            request_control(sub_pilot)
+            request_control(sub_veh)
+            --native.call(0xE2A2AA2F659D77A7, sub_pilot, sub_veh, dest_v3.x, dest_v3.y, -4.0, 100.0, 0, entity.get_entity_model_hash(sub_veh), vehicle_drive, 100.0, 10.0)
+            --native.call(0x15C86013127CE63F, sub_pilot, sub_veh, 0, 0, dest_v3.x, dest_v3.y, -4.0, 4, autopilot_speed, vehicle_drive, 50.0, 0)
+            native.call(0xC22B40579A498CA4, sub_pilot, sub_veh, dest_v3.x, dest_v3.y, autopilot_depth, true)
+            system.yield(0)
+            native.call(0x5C9B84BD7D31D908, sub_pilot, 300.0)
+            if speed_override.on then
+                native.call(0xBAA045B4E42F3C06, sub_veh, 300.0)
+                native.call(0x0E46A3FCBDE2A1B1, sub_veh, 300.0)
+
+            else
+                native.call(0xBAA045B4E42F3C06, sub_veh, 0.0)
+            end
+            native.call(0x75DBEC174AEEAD10, sub_veh, false)
+            native.call(0xC67DB108A9ADE3BE, sub_veh, true)
+            local sub_pos = entity.get_entity_coords(sub_veh)
+            vehicle.set_vehicle_forward_speed(sub_veh, 20)
+            entity.freeze_entity(sub_veh, true)
+            system.yield(0)
+            entity.freeze_entity(sub_veh, false)
+            menu.create_thread(function()
+                local dest = dest_v3
+                while true do
+                    local sub_pos = entity.get_entity_coords(sub_veh)
+                    if sub_pos:magnitude(dest) < 100 and entity.get_entity_speed(sub_veh) < 5 then
+                        break
+                    end
+                    system.yield(0)
+                end
+                local pilot = vehicle.get_ped_in_vehicle_seat(sub_veh, -1) or 0
+                request_control(sub_pilot)
+                ped.clear_ped_tasks_immediately(pilot)
+                system.yield(0)
+                entity.delete_entity(pilot)
+                menu.notify("Kosatka reached destination", "KosatkaAP")
+                native.call(0xBAA045B4E42F3C06, sub_veh, 0.0)
+            end)
+        else
+            menu.notify("#FF00AAFF#Couldn't start AP: Kosatka is busy! (diving)","JJS.KosatkaAP", nil, 0x0000FF)
+        end
+    else
+        menu.notify("#FF00AAFF#Kosatka isn't registered properly!","JJS.KosatkaAP", nil, 0x0000FF)
+    end
+end)
+ap_wp_start.hint = "Auto-pilots the submarine to the coords\nWILL NOT AVOID OBSTACLES"
+
+local ap_dive = menu.add_feature("Dive Underwater", "action", ap_kosatka.id, function(ft)
+    if kosatka_registered then
+        if not is_ap then
+            is_diving = true
+            request_model(ped_hash)
+            ped.clear_ped_tasks_immediately(vehicle.get_ped_in_vehicle_seat(sub_veh, -1) or 0)
+            system.yield(0)
+            sub_pilot = native.call(0x7DD959874C1FD534, sub_veh, 0, ped_hash, -1, true, false):__tointeger()
+            native.call(0x9F8AA94D6D97DBF4, sub_pilot, true)
+
+            local sub_pos = entity.get_entity_coords(sub_veh)
+
+            request_control(sub_pilot)
+            request_control(sub_veh)
+
+            local dist = math.abs(sub_pos.z-(-22.0))
+
+            native.call(0xC22B40579A498CA4, sub_pilot, sub_veh, sub_pos.x, sub_pos.y, -22.0, true)
+            native.call(0xB088E9A47AE6EDD5, sub_veh, true)
+            native.call(0x76D26A22750E849E, sub_veh)
+            system.yield(0)
+            native.call(0x5C9B84BD7D31D908, sub_pilot, 0.0)
+
+            native.call(0x75DBEC174AEEAD10, sub_veh, false)
+            native.call(0xC67DB108A9ADE3BE, sub_veh, true)
+            vehicle.set_vehicle_forward_speed(sub_veh, 20)
+            entity.freeze_entity(sub_veh, true)
+            system.yield(0)
+            entity.freeze_entity(sub_veh, false)
+
+            menu.create_thread(function()
+                dist = dist
+                for i1=1, 180 do
+                    local sub_pos = entity.get_entity_coords(sub_veh)
+                    entity.set_entity_coords_no_offset(sub_veh, v3(sub_pos.x, sub_pos.y, sub_pos.z-(dist/180)))
+                    system.yield(5)
+                end
+            end)
+        else
+            menu.notify("#FF00AAFF#Couldn't start Diving: Kosatka is busy! (AP)","JJS.KosatkaAP", nil, 0x0000FF)
+        end
     else
         menu.notify("#FF00AAFF#Kosatka isn't registered properly!","JJS.KosatkaAP", nil, 0x0000FF)
     end
 end)
 
-ap_wp_start.hint = "Auto-pilots the submarine to the coords\nWILL NOT AVOID OBSTACLES"
+ap_dive.hint = "Kinda broken lol"
 
 local kill_pilot = menu.add_feature("Kill AP", "action", ap_kosatka.id, function(ft)
     native.call(0xBAA045B4E42F3C06, sub_veh, 0.0)
     local sub_pos = entity.get_entity_coords(sub_veh)
     local pilot = vehicle.get_ped_in_vehicle_seat(sub_veh, -1) or 0
 
+    native.call(0x9F8AA94D6D97DBF4, sub_pilot, false)
+
     ped.clear_ped_tasks_immediately(pilot)
     native.call(0xDBBC7A2432524127, sub_veh)
     system.yield(0)
     entity.delete_entity(pilot)
+    is_diving = false
+    is_ap = false
 end)
 
 local toreador_ap_start = menu.add_feature("Toreador to Player", "action", ap_toreador.id, function(ft)
@@ -643,7 +702,7 @@ local spawn_boat_ap = menu.add_feature("Call Boat", "action", ap_boat.id, functi
         menu.notify("#FF00AAFF#Kosatka isn't registered properly!","JJS.KosatkaAP", nil, 0x0000FF)
     end
 end)
-spawn_boat_ap.hint = "Spawns a boat that goes to nearest shore, then back to kosatka"
+spawn_boat_ap.hint = "Spawns a boat that goes to nearest shore, then back to kosatka once you're seated"
 
 local kill_boat = menu.add_feature("Kill Boat", "action", ap_boat.id, function(ft)
     entity.delete_entity(vehicle.get_ped_in_vehicle_seat(boat, -1) or 0)
@@ -769,6 +828,7 @@ local spawn_extboat_ap = menu.add_feature("Boat to WP", "action", ap_boat2.id, f
         menu.notify("#FF00AAFF#Kosatka isn't registered properly!","JJS.KosatkaAP", nil, 0x0000FF)
     end
 end)
+spawn_extboat_ap.hint = "Spawns a boat in front of the kosatka, it will drive to your waypoint"
 
 local kill_extboat = menu.add_feature("Kill Boat", "action", ap_boat2.id, function(ft)
     entity.delete_entity(vehicle.get_ped_in_vehicle_seat(extboat, -1) or 0)
