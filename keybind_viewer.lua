@@ -93,9 +93,9 @@ local toggle_controls = menu.add_feature("Enable", "toggle", main_menu.id, funct
                         if data1 == nil then
                             break
                         end
-                        local ypos = 55+(35*inc)
-                        if ypos < my-80 then
-                            if inc % 4 < 2 then
+                        local ypos = 55+(35*inc)-(35*(scroll%1))
+                        if ypos < my-80 and ypos > 40 then
+                            if (inc+scroll) % 4 < 2 then
                                 draw_rect(60, ypos+3, mx-120, 35, 42,42,42,math.ceil(92 * alphamult))
                             end
                             
