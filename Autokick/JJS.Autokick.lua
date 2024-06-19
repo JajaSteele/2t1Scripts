@@ -135,9 +135,14 @@ if sp then
             local curr_name = player.get_player_name(event.player)
             local curr_scid = player.get_player_scid(event.player)
             if v.name == curr_name or v.scid == curr_scid then
-                network.force_remove_player(event.player)
-                menu.notify("Autokicked player:\nName: "..curr_name.."\nSCID: "..curr_scid, "Autokicked Player", nil, 0xFF0000FF)
-                print("JJS.Autokick: Kicked player \n Name: "..curr_name.."\n SCID: "..curr_scid)
+                network.force_remove_player(event.player, network.network_is_host())
+                if network.network_is_host() then
+                    menu.notify("Autokicked player:\nName: "..curr_name.."\nSCID: "..curr_scid, "Autokicked Player (Host-Kick)", nil, 0xFF0000FF)
+                    print("JJS.Autokick: Host-Kicked player\n Name: "..curr_name.."\n SCID: "..curr_scid)
+                else
+                    menu.notify("Autokicked player:\nName: "..curr_name.."\nSCID: "..curr_scid, "Autokicked Player", nil, 0xFF0000FF)
+                    print("JJS.Autokick: Kicked player \n Name: "..curr_name.."\n SCID: "..curr_scid)
+                end
                 break
             end
         end
