@@ -135,11 +135,12 @@ if sp then
             local curr_name = player.get_player_name(event.player)
             local curr_scid = player.get_player_scid(event.player)
             if v.name == curr_name or v.scid == curr_scid then
-                network.force_remove_player(event.player, network.network_is_host())
                 if network.network_is_host() then
+                    network.network_session_kick_player(event.player)
                     menu.notify("Autokicked player:\nName: "..curr_name.."\nSCID: "..curr_scid, "Autokicked Player (Host-Kick)", nil, 0xFF0000FF)
                     print("JJS.Autokick: Host-Kicked player\n Name: "..curr_name.."\n SCID: "..curr_scid)
                 else
+                    network.force_remove_player(event.player)
                     menu.notify("Autokicked player:\nName: "..curr_name.."\nSCID: "..curr_scid, "Autokicked Player", nil, 0xFF0000FF)
                     print("JJS.Autokick: Kicked player \n Name: "..curr_name.."\n SCID: "..curr_scid)
                 end
@@ -158,8 +159,13 @@ if sp then
         load_list()
         update_list()
         if ft.value == 1 then
-            network.force_remove_player(ply)
-            menu.notify("Added (And kicked) Player to Autokick list:\nName: "..(kick_list[#kick_list].name).."\nSCID: "..(kick_list[#kick_list].scid), "Added to List", nil, 0xFF00FF00)
+            if network.network_is_host() then
+                network.network_session_kick_player(ply)
+                menu.notify("Added (And host-kicked) Player to Autokick list:\nName: "..(kick_list[#kick_list].name).."\nSCID: "..(kick_list[#kick_list].scid), "Added to List", nil, 0xFF00FF00)
+            else
+                network.force_remove_player(ply)
+                menu.notify("Added (And kicked) Player to Autokick list:\nName: "..(kick_list[#kick_list].name).."\nSCID: "..(kick_list[#kick_list].scid), "Added to List", nil, 0xFF00FF00)
+            end
         else
             menu.notify("Added Player to Autokick list:\nName: "..(kick_list[#kick_list].name).."\nSCID: "..(kick_list[#kick_list].scid), "Added to List", nil, 0xFF00FF00)
         end
