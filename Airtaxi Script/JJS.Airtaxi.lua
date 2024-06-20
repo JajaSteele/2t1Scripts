@@ -458,7 +458,11 @@ local heli_radio_toggle = menu.add_feature("Enable","toggle",radio_menu.id,funct
 end)
 heli_radio_toggle.hint = "Toggle the radio ON or OFF"
 
-local spawn_heli = menu.add_feature("Spawn Heli", "action", main_menu.id, function()
+local use_current = menu.add_feature("Use Current Heli", "toggle", main_menu.id, function(ft)
+end)
+use_current.hint = "Enable this if you want to use the helicopter the player is into, instead of spawning a new one"
+
+local spawn_heli = menu.add_feature("Spawn Airtaxi", "action", main_menu.id, function()
     is_heli_active = true
     local local_player = player.player_id()
     local player_pos = player.get_player_coords(local_player)
@@ -467,30 +471,43 @@ local spawn_heli = menu.add_feature("Spawn Heli", "action", main_menu.id, functi
 
     local spawn_pos = player_pos+v3(0,0,35)
 
-    request_model(vehicle_hash)
-    heli_veh = vehicle.create_vehicle(vehicle_hash, spawn_pos, player_heading, true, false)
+    local player_veh = ped.get_vehicle_ped_is_using(player.player_ped())
 
-    vehicle.set_heli_blades_full_speed(heli_veh)
+    local local_vehicle = false
+
+    if use_current.on and player_veh and player_veh ~= 0 then
+        heli_veh = player_veh
+        local_vehicle = true
+    else
+        request_model(vehicle_hash)
+        heli_veh = vehicle.create_vehicle(vehicle_hash, spawn_pos, player_heading, true, false)
+    end
+
+    if not local_vehicle then
+        vehicle.set_heli_blades_full_speed(heli_veh)
+    end
     native.call(0x2311DD7159F00582, heli_veh, true)
     native.call(0xDBC631F109350B8C, heli_veh, true)
 
-    vehicle.set_vehicle_mod_kit_type(heli_veh, 0)
+    if not local_vehicle then
+        vehicle.set_vehicle_mod_kit_type(heli_veh, 0)
 
-    if color_ini:read() then
-        local _, primary = color_ini:get_i("Airtaxi","primary")
-        local _, secondary = color_ini:get_i("Airtaxi","secondary")
-        local _, pearl = color_ini:get_i("Airtaxi","pearl")
-        local _, wheels = color_ini:get_i("Airtaxi","wheels")
-        local _, windows = color_ini:get_i("Airtaxi","windows_tint")
+        if color_ini:read() then
+            local _, primary = color_ini:get_i("Airtaxi","primary")
+            local _, secondary = color_ini:get_i("Airtaxi","secondary")
+            local _, pearl = color_ini:get_i("Airtaxi","pearl")
+            local _, wheels = color_ini:get_i("Airtaxi","wheels")
+            local _, windows = color_ini:get_i("Airtaxi","windows_tint")
 
-        vehicle.set_vehicle_colors(heli_veh, primary or 12, secondary or 141)
-        vehicle.set_vehicle_extra_colors(heli_veh, pearl or 62, wheels or 0)
-        vehicle.set_vehicle_window_tint(heli_veh, windows or 1)
+            vehicle.set_vehicle_colors(heli_veh, primary or 12, secondary or 141)
+            vehicle.set_vehicle_extra_colors(heli_veh, pearl or 62, wheels or 0)
+            vehicle.set_vehicle_window_tint(heli_veh, windows or 1)
 
-    else
-        vehicle.set_vehicle_colors(heli_veh, 12, 141)
-        vehicle.set_vehicle_extra_colors(heli_veh, 62, 0)
-        vehicle.set_vehicle_window_tint(heli_veh, 1)
+        else
+            vehicle.set_vehicle_colors(heli_veh, 12, 141)
+            vehicle.set_vehicle_extra_colors(heli_veh, 62, 0)
+            vehicle.set_vehicle_window_tint(heli_veh, 1)
+        end
     end
 
     if heli_radio_toggle.on then
@@ -527,7 +544,9 @@ local spawn_heli = menu.add_feature("Spawn Heli", "action", main_menu.id, functi
     native.call(0x1913FE4CBF41C463, heli_ped, 251, true)
 
     native.call(0x1F4ED342ACEFE62D, heli_ped, true, true)
-    native.call(0x1F4ED342ACEFE62D, heli_veh, true, true)
+    if not local_vehicle then
+        native.call(0x1F4ED342ACEFE62D, heli_veh, true, true)
+    end
 
     request_control(heli_veh)
     request_control(heli_ped)
@@ -536,37 +555,39 @@ local spawn_heli = menu.add_feature("Spawn Heli", "action", main_menu.id, functi
     print("Heli ID: "..heli_veh)
     utils.to_clipboard(heli_veh)
 
-    repeat
-        system.yield(0)
-        if native.call(0x634148744F385576, heli_veh):__tointeger() == 1 then
-            local curr_vel = entity.get_entity_velocity(heli_veh)
-            request_control(heli_veh)
-            request_control(heli_ped)
-            entity.set_entity_velocity(heli_veh, v3(curr_vel.x, curr_vel.y, -0.75))
+    if not local_vehicle then
+        repeat
+            system.yield(0)
+            if native.call(0x634148744F385576, heli_veh):__tointeger() == 1 then
+                local curr_vel = entity.get_entity_velocity(heli_veh)
+                request_control(heli_veh)
+                request_control(heli_ped)
+                entity.set_entity_velocity(heli_veh, v3(curr_vel.x, curr_vel.y, -0.75))
+            end
+        until native.call(0x1DD55701034110E5, heli_veh):__tonumber() < 5 or native.call(0xCFB0A0D8EDD145A3, heli_veh):__tointeger() == 1 or not is_heli_active
+
+        notify("Greetings.\nEnter the helicopter to start.","JJS Airtaxi",nil,0xFF00FF)
+
+        repeat
+            system.yield(0)
+        until entity.get_entity_speed(heli_veh) < 1
+
+        request_control(heli_veh)
+        request_control(heli_ped)
+
+        for i1=1, 256 do
+            vehicle.set_heli_blades_speed(heli_veh, (360-i1)/360)
+            system.yield(0)
         end
-    until native.call(0x1DD55701034110E5, heli_veh):__tonumber() < 5 or native.call(0xCFB0A0D8EDD145A3, heli_veh):__tointeger() == 1 or not is_heli_active
 
-    notify("Greetings.\nEnter the helicopter to start.","JJS Airtaxi",nil,0xFF00FF)
+        request_control(heli_ped)
+        native.call(0xE1EF3C1216AFF2CD, heli_ped)
 
-    repeat
-        system.yield(0)
-    until entity.get_entity_speed(heli_veh) < 1
-
-    request_control(heli_veh)
-    request_control(heli_ped)
-
-    for i1=1, 256 do
-        vehicle.set_heli_blades_speed(heli_veh, (360-i1)/360)
-        system.yield(0)
+        repeat
+            system.yield(0)
+            vehicle.set_heli_blades_speed(heli_veh, 0.5)
+        until ped.is_ped_in_vehicle(player_ped, heli_veh) or not is_heli_active
     end
-
-    request_control(heli_ped)
-    native.call(0xE1EF3C1216AFF2CD, heli_ped)
-
-    repeat
-        system.yield(0)
-        vehicle.set_heli_blades_speed(heli_veh, 0.5)
-    until ped.is_ped_in_vehicle(player_ped, heli_veh) or not is_heli_active
 
     system.yield(2000)
 
@@ -671,7 +692,7 @@ local spawn_heli = menu.add_feature("Spawn Heli", "action", main_menu.id, functi
             system.yield(0)
         until entity.get_entity_speed(heli_veh) < 1
         system.yield(500)
-        ai.task_leave_vehicle(heli_ped, heli_veh, 64)
+        --ai.task_leave_vehicle(heli_ped, heli_veh, 64)
         vehicle.set_vehicle_engine_on(heli_veh, false, false, true)
         for i1=1, 180 do
             vehicle.set_heli_blades_speed(heli_veh, (180-i1)/180)
@@ -686,7 +707,7 @@ local spawn_heli = menu.add_feature("Spawn Heli", "action", main_menu.id, functi
     else
         repeat
             system.yield(0)
-        until get_taken_seats(heli_veh) == 0 or not is_heli_active
+        until get_taken_seats(heli_veh) <= 1 or not is_heli_active
     end
 
     if heli_rappeldown.on then
@@ -697,7 +718,13 @@ local spawn_heli = menu.add_feature("Spawn Heli", "action", main_menu.id, functi
 
     system.yield(3000)
 
-    native.call(0xDE564951F95E09ED, heli_veh, true, true)
+    if not local_vehicle then
+        native.call(0xDE564951F95E09ED, heli_veh, true, true)
+    else
+        native.call(0xBE70724027F85BCD, heli_veh, 0, 0)
+        native.call(0xBE70724027F85BCD, heli_veh, 1, 0)
+        heli_veh = 0
+    end
     native.call(0xDE564951F95E09ED, heli_ped, true, true)
 
     system.yield(2000)
