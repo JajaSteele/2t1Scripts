@@ -87,7 +87,11 @@ menu.add_player_feature("Follow With Current Plane","action",0,function(feat,pid
     native.call(0x1913FE4CBF41C463, pilot_ped, 255, true)
     native.call(0x1913FE4CBF41C463, pilot_ped, 251, true)
     native.call(0x1913FE4CBF41C463, pilot_ped, 184, true)
-
+    local plane_vehicle = player.player_vehicle()
+    local pilot = vehicle.get_ped_in_vehicle_seat(plane_vehicle, -1)
+    if pilot == player.player_ped() then
+        ped.set_ped_into_vehicle(player.player_ped(), plane_vehicle, 0)
+    end
     ped.set_ped_into_vehicle(pilot_ped, plane_vehicle, -1)
 
     native.call(0x2D2386F273FF7A25, pilot_ped, player.get_player_ped(pid))
