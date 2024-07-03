@@ -27,6 +27,10 @@ local cargobob_autoenter = menu.add_integrated_feature_after("Cargobob Auto-Ente
 cargobob_autoenter.hint = "Toggles whether the player is teleported in driver seat after spawning cargobob"
 cargobob_autoenter.on = true
 
+local cargobob_weak_magnet = menu.add_integrated_feature_after("Cargobob Weak Magnet", "toggle", vehicle_feature)
+cargobob_weak_magnet.hint = "Reduces the strength of the magnet, to prevent chaos from attracting all nearby vehicles"
+cargobob_weak_magnet.on = true
+
 local spawn_cargobob = menu.add_integrated_feature_after("Spawn Cargobob", "action_value_str", vehicle_feature, function(ft)
     local player_id = player.player_id()
     local player_pos = player.get_player_coords(player_id)
@@ -44,6 +48,10 @@ local spawn_cargobob = menu.add_integrated_feature_after("Spawn Cargobob", "acti
     end
 
     native.call(0x7BEB0C7A235F6F3B, new_cargobob, ft.value)
+    if ft.value == 1 and cargobob_weak_magnet.on then
+        native.call(0x66979ACF5102FD2F, new_cargobob, 0.01)
+        native.call(0x6D8EAC07506291FB, new_cargobob, 0.01)
+    end
 end)
 spawn_cargobob:set_str_data({"Hook","Magnet"})
 spawn_cargobob.hint = "Spawns a cargobob"
