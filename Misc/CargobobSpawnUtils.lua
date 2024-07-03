@@ -32,6 +32,7 @@ local spawn_cargobob = menu.add_integrated_feature_after("Spawn Cargobob", "acti
     local player_pos = player.get_player_coords(player_id)
     local player_heading = player.get_player_heading(player_id)
 
+    request_model(cargo_hash)
     local new_cargobob
     if cargobob_autoenter.on then
         new_cargobob = vehicle.create_vehicle(cargo_hash, player_pos+v3(0, 0, 5), player_heading, true, false)
