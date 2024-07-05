@@ -40,7 +40,7 @@ if menu.is_trusted_mode_enabled(1 << 3) then
             end
         else
             menu.notify("No update detected\n#FF00AAFF#To disable updates, disable Trusted HTTP","Cargobob Spawning Utils",nil,0xFF00FF)
-            print("Update HTTP for JJS Cargobob Spawning Utils: "..code)
+            print("Update HTTP for Cargobob Spawning Utils: "..code)
         end
     end)
 end
