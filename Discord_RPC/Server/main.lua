@@ -67,27 +67,27 @@ end
 
 
 function discordRPC.ready(userId, username, discriminator, avatar)
-    print(string.format("Discord: ready (%s, %s, %s, %s)", userId, username, discriminator, avatar))
+    log(string.format("Discord: ready (%s, %s, %s, %s)", userId, username, discriminator, avatar), log_lvl.info)
 end
 
 function discordRPC.disconnected(errorCode, message)
-    print(string.format("Discord: disconnected (%d: %s)", errorCode, message))
+    log(string.format("Discord: disconnected (%d: %s)", errorCode, message), log_lvl.error)
 end
 
 function discordRPC.errored(errorCode, message)
-    print(string.format("Discord: error (%d: %s)", errorCode, message))
+    log(string.format("Discord: error (%d: %s)", errorCode, message), log_lvl.error)
 end
 
 function discordRPC.joinGame(joinSecret)
-    print(string.format("Discord: join (%s)", joinSecret))
+    log(string.format("Discord: join (%s)", joinSecret), log_lvl.info)
 end
 
 function discordRPC.spectateGame(spectateSecret)
-    print(string.format("Discord: spectate (%s)", spectateSecret))
+    log(string.format("Discord: spectate (%s)", spectateSecret), log_lvl.info)
 end
 
 function discordRPC.joinRequest(userId, username, discriminator, avatar)
-    print(string.format("Discord: join request (%s, %s, %s, %s)", userId, username, discriminator, avatar))
+    log(string.format("Discord: join request (%s, %s, %s, %s)", userId, username, discriminator, avatar), log_lvl.warn)
     discordRPC.respond(userId, "yes")
 end
 
@@ -95,6 +95,8 @@ local presence = {
     state = "Testing",
     details = "Nerd shit"
 }
+
+local last_update = os.time()
 
 local app_id = "1259926413180534875"
 
@@ -109,7 +111,7 @@ local res_headers = {
    reason = "OK",
 }
 
-http.createServer("127.0.0.1", 1234, function (req, body)
+local server = http.createServer("127.0.0.1", 1234, function (req, body)
     local update_list = {}
     log({
         "RECEIVED RPC UPDATE",
@@ -124,6 +126,7 @@ http.createServer("127.0.0.1", 1234, function (req, body)
 
     log(update_list, log_lvl.info)
 
+    last_update = os.time()
     return res_headers, res_payload -- respond with this to every request
 end)
 
@@ -131,4 +134,17 @@ while true do
     discordRPC.runCallbacks()
     discordRPC.updatePresence(presence)
     timer.sleep(1000)
+    if last_update == os.time()-10 then
+        log("No update for 10s! Assuming GTA is closed, quitting server in 10s.", log_lvl.warn)
+        presence = {
+            state = "Quitting Server..",
+            details = "RPC Server Timeout"
+        }
+    end
+    if last_update < os.time()-20 then
+        log("No update for 20s! Quitting server!", log_lvl.error)
+        timer.sleep(1000)
+        server:close()
+        return
+    end
 end
