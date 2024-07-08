@@ -181,15 +181,19 @@ menu.create_thread(function()
     while true do
         local to_remove = {}
         for key,data in pairs(player_hit_timer) do
-            if data.timer > 0 then
+            if data.timer > 0 and data.id ~= player.player_ped() then
                 if snowball_mode == 1 then
                     system.yield(250)
                     if ped.is_ped_a_player(data.id) then
                         for i1=1, player.player_count()-1 do
-                            if player.get_player_ped(i1) == data.id then
+                            if player.get_player_ped(i1) == data.id and player.get_player_ped(i1) ~= player.player_ped() then
                                 local curr_name = player.get_player_name(i1)
                                 local curr_scid = player.get_player_scid(i1)
                                 native.call(0x2206BF9A37B7F724, "REDMISTOUT", 2000, false)
+
+                                if i1 == player.player_id() then
+                                    break
+                                end
 
                                 if network.network_is_host() then
                                     network.network_session_kick_player(i1)
@@ -295,8 +299,10 @@ menu.create_thread(function()
         end
 
         for k,v in pairs(to_remove) do
-            local data = table.remove(player_hit_timer, v)
-            print("Removed: "..(data or {id="UNKNOWN"}).id)
+            pcall(function()
+                local data = table.remove(player_hit_timer, v)
+                print("Removed: "..(data or {id="UNKNOWN"}).id)
+            end)
         end
         system.yield(0)
     end
