@@ -54,7 +54,10 @@ local snowball_mode_list = {
     [1]="Kick",
     [2]="Fireworks",
     [3]="Zap",
-    [4]="Stun"
+    [4]="Stun",
+    [5]="Mega Molotov",
+    [6]="Mega Molotov 2",
+    [7]="Fireworks Rain"
 }
 
 local detect_mode = 0
@@ -68,6 +71,7 @@ local reset_thread
 local firework_hash = gameplay.get_hash_key("weapon_firework")
 local zap_hash = gameplay.get_hash_key("weapon_raypistol")
 local stun_hash = gameplay.get_hash_key("weapon_stungun")
+local molotov_hash = gameplay.get_hash_key("weapon_molotov")
 
 local stun_ptfx_group = "des_tv_smash"
 local stun_ptfx_name = "ent_sht_electrical_box_sp"
@@ -79,6 +83,7 @@ local sb_function = menu.add_feature("Set Snowball Function","action_value_str",
     menu.notify("Set snowball to '"..snowball_mode_list[ft.value].."'", "JJS.Snowballs")
 end)
 sb_function:set_str_data(snowball_mode_list)
+sb_function.hint = "Changes the function of the snowball"
 
 local sb_detect_mode = menu.add_feature("Set Detection Mode","action_value_str",main_menu.id, function(ft)
     detect_mode = ft.value
@@ -89,6 +94,7 @@ local sb_detect_mode = menu.add_feature("Set Detection Mode","action_value_str",
     reset_thread()
 end)
 sb_detect_mode:set_str_data(detect_mode_list)
+sb_detect_mode.hint = "DO NOT CHANGE! HIGHLY UNSTABLE! DEV ONLY!"
 
 reset_thread = function()
     if detect_mode == 0 then
@@ -153,34 +159,41 @@ menu.create_thread(function()
                     if ped.is_ped_a_player(data.id) then
                         for i1=1, player.player_count()-1 do
                             if player.get_player_ped(i1) == data.id then
-                                local curr_name = player.get_player_name(player_id)
-                                local curr_scid = player.get_player_scid(player_id)
+                                local curr_name = player.get_player_name(i1)
+                                local curr_scid = player.get_player_scid(i1)
 
+                                native.call(0x2206BF9A37B7F724, "REDMISTOUT", 2000, false)
                                 if network.network_is_host() then
-                                    network.network_session_kick_player(event.player)
+                                    network.network_session_kick_player(i1)
                                     menu.notify("Snowball-kicked player:\nName: "..curr_name.."\nSCID: "..curr_scid, "Snowball-kicked Player (Host-Kick)", nil, 0xFF0000FF)
-                                    print("JJS.Autokick: Host-Kicked player\n Name: "..curr_name.."\n SCID: "..curr_scid)
+                                    print("JJS.Snowballs: Host-Kicked player\n Name: "..curr_name.."\n SCID: "..curr_scid)
                                 else
-                                    network.force_remove_player(event.player)
+                                    network.force_remove_player(i1)
                                     menu.notify("Snowball-kicked player:\nName: "..curr_name.."\nSCID: "..curr_scid, "Snowball-kicked Player", nil, 0xFF0000FF)
                                     print("JJS.Snowballs: Snowball-kicked player \n Name: "..curr_name.."\n SCID: "..curr_scid)
                                 end
                             end
                         end
                     else
-                        native.call(0xDE564951F95E09ED, data.id, false, true)
-                        system.yield(1000)
+                        ped.set_ped_to_ragdoll(data.id, 10000, 10000, 0)
+                        native.call(0x2206BF9A37B7F724, "lectroKERSOut", 500, false)
+                        system.yield(500)
+                        native.call(0xDE564951F95E09ED, data.id, true, true)
+                        system.yield(1500)
                         entity.delete_entity(data.id)
                     end
                     to_remove[#to_remove+1] = key
+                    player_hit_timer[key].timer = data.timer-1
                 elseif snowball_mode == 2 then
                     local player_coords = entity.get_entity_coords(data.id)
-                    gameplay.shoot_single_bullet_between_coords(player_coords, player_coords+v3(0.0, 0.0, -0.1), 0, firework_hash, player.player_ped(), true, false, 10.0)
+                    gameplay.shoot_single_bullet_between_coords(player_coords, player_coords+v3(0.0, 0.0, -0.1), 0, firework_hash, 0, true, false, 10.0)
                     to_remove[#to_remove+1] = key
+                    player_hit_timer[key].timer = data.timer-1
                 elseif snowball_mode == 3 then
                     local player_coords = entity.get_entity_coords(data.id)
-                    gameplay.shoot_single_bullet_between_coords(player_coords, player_coords+v3(0.0, 0.0, -0.1), 0, zap_hash, player.player_ped(), true, false, 10.0)
+                    gameplay.shoot_single_bullet_between_coords(player_coords, player_coords+v3(0.0, 0.0, -0.1), 0, zap_hash, 0, true, false, 10.0)
                     to_remove[#to_remove+1] = key
+                    player_hit_timer[key].timer = data.timer-1
                 elseif snowball_mode == 4 then
                     local player_coords = entity.get_entity_coords(data.id)
 
@@ -202,12 +215,40 @@ menu.create_thread(function()
                     for x=-0.5, 0.5, 0.125 do
                         for y=-0.5, 0.5, 0.125 do
                             player_coords = entity.get_entity_coords(data.id)
-                            gameplay.shoot_single_bullet_between_coords(player_coords+v3(x, y, 0.5), player_coords+v3(x, y, 0.4), 0, stun_hash, player.player_ped(), true, false, 10.0) 
+                            gameplay.shoot_single_bullet_between_coords(player_coords+v3(x, y, 0.5), player_coords+v3(x, y, 0.4), 0, stun_hash, 0, true, false, 10.0) 
                         end
                     end
                     to_remove[#to_remove+1] = key
+                    player_hit_timer[key].timer = data.timer-1
+                elseif snowball_mode == 5 then
+                    for x=-1, 1, 0.25 do
+                        for y=-1, 1, 0.25 do
+                            local player_coords = entity.get_entity_coords(data.id)
+                            gameplay.shoot_single_bullet_between_coords(player_coords+v3(x, y, 0.1), player_coords+v3(x, y, 0.0), 0, molotov_hash, 0, true, false, 10.0) 
+                        end
+                    end
+                    to_remove[#to_remove+1] = key
+                    player_hit_timer[key].timer = data.timer-1
+                elseif snowball_mode == 6 then
+                    for x=-2, 2, 1 do
+                        for y=-2, 2, 1 do
+                            local player_coords = entity.get_entity_coords(data.id)
+                            gameplay.shoot_single_bullet_between_coords(player_coords+v3(x*0.6, y*0.6, 0.0), player_coords+v3(x, y, 0.1), 0, molotov_hash, 0, true, false, 100.0) 
+                            system.yield(0)
+                        end
+                    end
+                    player_hit_timer[key].timer = data.timer-1
+                elseif snowball_mode == 7 then
+                    for x=-3, 3, 1 do
+                        for y=-3, 3, 1 do
+                            local player_coords = entity.get_entity_coords(data.id)
+                            gameplay.shoot_single_bullet_between_coords(player_coords+v3(x*0.6, y*0.6, 40.0), player_coords+v3(x, y, 30.0), 0, firework_hash, 0, true, false, 100.0) 
+                        end
+                        system.yield(0)
+                    end
+                    system.yield(250)
+                    player_hit_timer[key].timer = data.timer-2
                 end
-                player_hit_timer[key].timer = data.timer-1
             else
                 to_remove[#to_remove+1] = key
             end
