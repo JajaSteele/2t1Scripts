@@ -52,7 +52,7 @@ local snowball_projectile = gameplay.get_hash_key("w_ex_snowball")
 local snowball_mode = 0
 local snowball_mode_list = {
     [0]="None",
-    [1]="Kick",
+    [1]="Kick/Delete",
     [2]="Fireworks",
     [3]="Zap",
     [4]="Stun",
@@ -62,6 +62,25 @@ local snowball_mode_list = {
     [8]="Zap Repeated",
     [9]="Zap Repeated x2"
 }
+
+local non_ped_allowed_modes = {
+    1,
+    2,
+    3,
+    5,
+    6,
+    7,
+    8,
+    9
+}
+
+local function is_non_ped_allowed(mode)
+    for k,v in pairs(non_ped_allowed_modes) do
+        if v == mode then
+            return true
+        end
+    end
+end
 
 local detect_mode = 1
 local detect_mode_list = {
@@ -139,6 +158,9 @@ reset_thread = function()
                                         if driver and driver ~= 0 then
                                             table.insert(player_hit_timer, {timer=15, id=driver})
                                             print("Added Ped from vehicle: "..driver)
+                                        elseif is_non_ped_allowed(snowball_mode) then
+                                            table.insert(player_hit_timer, {timer=15, id=last_hit})
+                                            print("Added vehicle: "..last_hit)
                                         end
                                     end
                                     system.yield(0)
