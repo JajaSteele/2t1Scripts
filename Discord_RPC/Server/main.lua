@@ -96,7 +96,7 @@ local presence = {
     details = "Nerd shit"
 }
 
-local last_update = os.time()
+local last_update = os.time()+120
 
 local app_id = "1259926413180534875"
 
