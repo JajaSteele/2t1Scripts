@@ -47,6 +47,7 @@ end
 local player_hit_timer = {}
 
 local snowball_hash = gameplay.get_hash_key("weapon_snowball")
+local snowball_launcher_hash = gameplay.get_hash_key("weapon_snowlauncher")
 local snowball_projectile = gameplay.get_hash_key("w_ex_snowball")
 local snowball_mode = 0
 local snowball_mode_list = {
@@ -58,10 +59,11 @@ local snowball_mode_list = {
     [5]="Mega Molotov",
     [6]="Mega Molotov 2",
     [7]="Fireworks Rain",
-    [8]="Zap Repeated"
+    [8]="Zap Repeated",
+    [9]="Zap Repeated x2"
 }
 
-local detect_mode = 0
+local detect_mode = 1
 local detect_mode_list = {
     [0]="Ped Hit Time",
     [1]="Last Touched Entity"
@@ -95,7 +97,8 @@ local sb_detect_mode = menu.add_feature("Set Detection Mode","action_value_str",
     reset_thread()
 end)
 sb_detect_mode:set_str_data(detect_mode_list)
-sb_detect_mode.hint = "Ped Hit Time: More reliable, but doesn't work on peds in vehicles or on god-modded peds/players\n\nLast Touched Entity: A bit less stable, but works on peds in cars, AND works on godmodded players!"
+sb_detect_mode.hint = "Ped Hit Time: More reliable, but doesn't work on peds in vehicles or on god-modded peds/players\n\nLast Touched Entity: A bit less stable, but: works on peds in cars, works on godmodded players, and can use Snowball Launcher!"
+sb_detect_mode.value = 1
 
 reset_thread = function()
     if detect_mode == 0 then
@@ -259,6 +262,10 @@ menu.create_thread(function()
                     local player_coords = entity.get_entity_coords(data.id)
                     gameplay.shoot_single_bullet_between_coords(player_coords, player_coords+v3(0.0, 0.0, -0.1), 0, zap_hash, 0, true, false, 10.0)
                     player_hit_timer[key].timer = data.timer-1
+                elseif snowball_mode == 9 then
+                    local player_coords = entity.get_entity_coords(data.id)
+                    gameplay.shoot_single_bullet_between_coords(player_coords, player_coords+v3(0.0, 0.0, -0.1), 0, zap_hash, 0, true, false, 10.0)
+                    player_hit_timer[key].timer = data.timer-0.5
                 end
             else
                 to_remove[#to_remove+1] = key
@@ -278,6 +285,10 @@ menu.create_thread(function()
         if not weapon.has_ped_got_weapon(player.player_ped(), snowball_hash) then
             weapon.give_delayed_weapon_to_ped(player.player_ped(), snowball_hash, 0, false)
             menu.notify("Snowballs added to player inventory!")
+        end
+        if not weapon.has_ped_got_weapon(player.player_ped(), snowball_launcher_hash) and detect_mode == 1 then
+            weapon.give_delayed_weapon_to_ped(player.player_ped(), snowball_launcher_hash, 0, false)
+            menu.notify("Snowball Launcher added to player inventory!")
         end
         system.yield(2000)
     end
