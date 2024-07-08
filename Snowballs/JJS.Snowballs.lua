@@ -57,13 +57,14 @@ local snowball_mode_list = {
     [4]="Stun",
     [5]="Mega Molotov",
     [6]="Mega Molotov 2",
-    [7]="Fireworks Rain"
+    [7]="Fireworks Rain",
+    [8]="Zap Repeated"
 }
 
 local detect_mode = 0
 local detect_mode_list = {
     [0]="Ped Hit Time",
-    [1]="Entity Collision (BROKEN)"
+    [1]="Last Touched Entity"
 }
 local detection_thread
 local reset_thread
@@ -123,19 +124,21 @@ reset_thread = function()
                 local all_obj = object.get_all_objects()
                 for k,obj in pairs(all_obj) do
                     if network.has_control_of_entity(obj) then
-                        if entity.get_entity_model_hash(obj) == 1297482736 then -- w_ex_snowball
-                            for k, obj2 in pairs(all_obj) do
-                                local hit_entity = native.call(0x17FFC1B2BA35A494, obj, obj2):__tointeger()
-                                print(hit_entity)
-                                if hit_entity == 1 and entity.is_entity_a_ped(obj2) then
-                                    table.insert(player_hit_timer, {timer=15, id=obj2})
-                                    print("Added Ped: "..obj2)
-                                elseif hit_entity == 1 and entity.is_entity_a_vehicle(obj2) then
-                                    local driver = vehicle.get_ped_in_vehicle_seat(obj2, -1)
-                                    if driver then
-                                        table.insert(player_hit_timer, {timer=15, id=driver})
-                                        print("Added Ped from vehicle: "..driver)
+                        if not entity.is_entity_dead(obj) and entity.get_entity_model_hash(obj) == 1297482736 and native.call(0xB1632E9A5F988D11, obj):__tointeger() == 0 then -- w_ex_snowball
+                            for k, ped_id in ipairs(ped.get_all_peds()) do
+                                local last_hit = native.call(0xA75EE4F689B85391, obj):__tointeger()
+                                if last_hit ~= 0 then
+                                    if entity.is_entity_a_ped(last_hit) then
+                                        table.insert(player_hit_timer, {timer=15, id=last_hit})
+                                        print("Added Ped: "..last_hit)
+                                    elseif entity.is_entity_a_vehicle(last_hit) then
+                                        local driver = vehicle.get_ped_in_vehicle_seat(last_hit, -1)
+                                        if driver and driver ~= 0 then
+                                            table.insert(player_hit_timer, {timer=15, id=driver})
+                                            print("Added Ped from vehicle: "..driver)
+                                        end
                                     end
+                                    system.yield(0)
                                 end
                             end
                         end
@@ -161,8 +164,8 @@ menu.create_thread(function()
                             if player.get_player_ped(i1) == data.id then
                                 local curr_name = player.get_player_name(i1)
                                 local curr_scid = player.get_player_scid(i1)
-
                                 native.call(0x2206BF9A37B7F724, "REDMISTOUT", 2000, false)
+
                                 if network.network_is_host() then
                                     network.network_session_kick_player(i1)
                                     menu.notify("Snowball-kicked player:\nName: "..curr_name.."\nSCID: "..curr_scid, "Snowball-kicked Player (Host-Kick)", nil, 0xFF0000FF)
@@ -174,6 +177,10 @@ menu.create_thread(function()
                                 end
                             end
                         end
+                        system.yield(500)
+                        native.call(0xDE564951F95E09ED, data.id, true, true)
+                        system.yield(1500)
+                        entity.delete_entity(data.id)
                     else
                         ped.set_ped_to_ragdoll(data.id, 10000, 10000, 0)
                         native.call(0x2206BF9A37B7F724, "lectroKERSOut", 500, false)
@@ -248,6 +255,10 @@ menu.create_thread(function()
                     end
                     system.yield(250)
                     player_hit_timer[key].timer = data.timer-2
+                elseif snowball_mode == 8 then
+                    local player_coords = entity.get_entity_coords(data.id)
+                    gameplay.shoot_single_bullet_between_coords(player_coords, player_coords+v3(0.0, 0.0, -0.1), 0, zap_hash, 0, true, false, 10.0)
+                    player_hit_timer[key].timer = data.timer-1
                 end
             else
                 to_remove[#to_remove+1] = key
@@ -256,7 +267,7 @@ menu.create_thread(function()
 
         for k,v in pairs(to_remove) do
             local data = table.remove(player_hit_timer, v)
-            print("Removed: "..data.id)
+            print("Removed: "..(data or {id="UNKNOWN"}).id)
         end
         system.yield(0)
     end
