@@ -96,7 +96,10 @@ local presence = {
     details = "Nerd shit"
 }
 
+local grace_period_end = os.time()+120
+local grace_period_reached = false
 local last_update = os.time()+120
+log("120s Grace period before auto-close is re-enabled!", log_lvl.warn)
 
 local app_id = "1259926413180534875"
 
@@ -146,5 +149,9 @@ while true do
         timer.sleep(1000)
         server:close()
         return
+    end
+    if os.time() >= grace_period_end and not grace_period_reached then
+        log({"Auto-Close grace period terminated!", "The server will now auto-close if no more requests are received for 20s"}, log_lvl.warn)
+        grace_period_reached = true
     end
 end
