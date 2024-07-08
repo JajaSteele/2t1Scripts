@@ -95,7 +95,7 @@ local sb_detect_mode = menu.add_feature("Set Detection Mode","action_value_str",
     reset_thread()
 end)
 sb_detect_mode:set_str_data(detect_mode_list)
-sb_detect_mode.hint = "DO NOT CHANGE! HIGHLY UNSTABLE! DEV ONLY!"
+sb_detect_mode.hint = "Ped Hit Time: More reliable, but doesn't work on peds in vehicles or on god-modded peds/players\n\nLast Touched Entity: A bit less stable, but works on peds in cars, AND works on godmodded players!"
 
 reset_thread = function()
     if detect_mode == 0 then
