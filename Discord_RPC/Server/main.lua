@@ -137,14 +137,14 @@ while true do
     discordRPC.runCallbacks()
     discordRPC.updatePresence(presence)
     timer.sleep(1000)
-    if last_update == os.time()-20 then
+    if last_update == os.time()-60 then
         log("No update for 60s! Assuming GTA is closed, quitting server in 60s.", log_lvl.warn)
         presence = {
             state = "Quitting Server..",
             details = "RPC Server Timeout"
         }
     end
-    if last_update < os.time()-40 then
+    if last_update < os.time()-120 then
         log("No update for 120s! Quitting server!", log_lvl.error)
         timer.sleep(1000)
         server:close()
