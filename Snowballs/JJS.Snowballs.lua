@@ -45,6 +45,10 @@ if menu.is_trusted_mode_enabled(1 << 3) then
 end
 
 local setting_ini = IniParser("scripts/JJS.Snowballs.ini")
+if setting_ini:read() then
+    menu.notify("Loaded Config", "JJS.Snowballs")
+end
+
 
 local player_hit_timer = {}
 
@@ -52,9 +56,11 @@ local snowball_hash = gameplay.get_hash_key("weapon_snowball")
 local snowball_launcher_hash = gameplay.get_hash_key("weapon_snowlauncher")
 local snowball_projectile = gameplay.get_hash_key("w_ex_snowball")
 local exists, snowball_mode = setting_ini:get_i("Config", "default_function")
-if snowball_mode == nil then
+if not exists then
     snowball_mode = 1
+    setting_ini:set_i("Config", "default_function", 1)
 end
+print("default_function : "..snowball_mode)
 local snowball_mode_list = {
     [0]="None",
     [1]="Kick/Delete",
@@ -88,9 +94,11 @@ local function is_non_ped_allowed(mode)
 end
 
 local exists, detect_mode = setting_ini:get_i("Config", "default_detector")
-if detect_mode == nil then
+if not exists then
     detect_mode = 1
+    setting_ini:set_i("Config", "default_detector", 1)
 end
+print("default_detector : "..detect_mode)
 local detect_mode_list = {
     [0]="Ped Hit Time",
     [1]="Last Touched Entity"
@@ -106,10 +114,6 @@ local molotov_hash = gameplay.get_hash_key("weapon_molotov")
 local stun_ptfx_group = "des_tv_smash"
 local stun_ptfx_name = "ent_sht_electrical_box_sp"
 
-if setting_ini:read() then
-    menu.notify("Loaded Config", "JJS.Snowballs")
-end
-
 local main_menu = menu.add_feature("#FFFFC64D#J#FFFFD375#J#FFFFE1A1#S #FFFFF8EB#Snowballs","parent",0)
 
 local sb_function = menu.add_feature("Set Snowball Function","action_value_str",main_menu.id, function(ft)
@@ -120,7 +124,6 @@ end)
 sb_function:set_str_data(snowball_mode_list)
 sb_function.hint = "Changes the function of the snowball"
 sb_function.value = snowball_mode or 1
-print("Snowball Config Loading: "..(snowball_mode or 1))
 
 local sb_detect_mode = menu.add_feature("Set Detection Mode","action_value_str",main_menu.id, function(ft)
     detect_mode = ft.value
@@ -134,7 +137,6 @@ end)
 sb_detect_mode:set_str_data(detect_mode_list)
 sb_detect_mode.hint = "Ped Hit Time: More reliable, but doesn't work on peds in vehicles or on god-modded peds/players\n\nLast Touched Entity: A bit less stable, but: works on peds in cars, works on godmodded players, and can use Snowball Launcher!"
 sb_detect_mode.value = detect_mode or 1
-print("Snowball Config Loading: "..(detect_mode or 1))
 
 menu.add_feature("Save Default Settings","action",main_menu.id,function(feat)
     setting_ini:write()
