@@ -103,6 +103,7 @@ menu.create_thread(function()
 
         local coords = player.get_player_coords(player.player_id())
 
+        local online_status = "Online"
 
         if native.call(0xF3929C2379B60CCE):__tointeger() == 1 then
             lobby_type = "Solo"
@@ -112,9 +113,12 @@ menu.create_thread(function()
             lobby_type = "Friends-Only"
         elseif native.call(0x74732C6CA90DA2B4):__tointeger() == 1 then
             lobby_type = "Crew-Only"
+        elseif player.player_count() == 0 then
+            lobby_type = "Story Mode"
+            online_status = "Offline"
         end
 
-        local lobby_status = "Playing Online ("..lobby_type..")"
+        local lobby_status = "Playing "..online_status.." ("..lobby_type..")"
 
         data.joinSecret = tostring("SecretsDoesn'tWorkHereLol")
         data.partyId = tostring(player.get_player_scid(player.player_id()))
