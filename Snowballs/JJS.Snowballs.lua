@@ -44,12 +44,17 @@ if menu.is_trusted_mode_enabled(1 << 3) then
     end)
 end
 
+local setting_ini = IniParser("scripts/JJS.Snowballs.ini")
+
 local player_hit_timer = {}
 
 local snowball_hash = gameplay.get_hash_key("weapon_snowball")
 local snowball_launcher_hash = gameplay.get_hash_key("weapon_snowlauncher")
 local snowball_projectile = gameplay.get_hash_key("w_ex_snowball")
-local snowball_mode = 0
+local exists, snowball_mode = setting_ini:get_i("Config", "default_function")
+if snowball_mode == nil then
+    snowball_mode = 1
+end
 local snowball_mode_list = {
     [0]="None",
     [1]="Kick/Delete",
@@ -82,7 +87,10 @@ local function is_non_ped_allowed(mode)
     end
 end
 
-local detect_mode = 1
+local exists, detect_mode = setting_ini:get_i("Config", "default_detector")
+if detect_mode == nil then
+    detect_mode = 1
+end
 local detect_mode_list = {
     [0]="Ped Hit Time",
     [1]="Last Touched Entity"
@@ -98,17 +106,25 @@ local molotov_hash = gameplay.get_hash_key("weapon_molotov")
 local stun_ptfx_group = "des_tv_smash"
 local stun_ptfx_name = "ent_sht_electrical_box_sp"
 
+if setting_ini:read() then
+    menu.notify("Loaded Config", "JJS.Snowballs")
+end
+
 local main_menu = menu.add_feature("#FFFFC64D#J#FFFFD375#J#FFFFE1A1#S #FFFFF8EB#Snowballs","parent",0)
 
 local sb_function = menu.add_feature("Set Snowball Function","action_value_str",main_menu.id, function(ft)
     snowball_mode = ft.value
+    setting_ini:set_i("Config", "default_function", ft.value)
     menu.notify("Set snowball to '"..snowball_mode_list[ft.value].."'", "JJS.Snowballs")
 end)
 sb_function:set_str_data(snowball_mode_list)
 sb_function.hint = "Changes the function of the snowball"
+sb_function.value = snowball_mode or 1
+print("Snowball Config Loading: "..(snowball_mode or 1))
 
 local sb_detect_mode = menu.add_feature("Set Detection Mode","action_value_str",main_menu.id, function(ft)
     detect_mode = ft.value
+    setting_ini:set_i("Config", "default_detector", ft.value)
     menu.notify("Set detection to '"..detect_mode_list[ft.value].."'", "JJS.Snowballs")
     if detection_thread and not menu.has_thread_finished(detection_thread) then
         menu.delete_thread(detection_thread)
@@ -117,9 +133,16 @@ local sb_detect_mode = menu.add_feature("Set Detection Mode","action_value_str",
 end)
 sb_detect_mode:set_str_data(detect_mode_list)
 sb_detect_mode.hint = "Ped Hit Time: More reliable, but doesn't work on peds in vehicles or on god-modded peds/players\n\nLast Touched Entity: A bit less stable, but: works on peds in cars, works on godmodded players, and can use Snowball Launcher!"
-sb_detect_mode.value = 1
+sb_detect_mode.value = detect_mode or 1
+print("Snowball Config Loading: "..(detect_mode or 1))
+
+menu.add_feature("Save Default Settings","action",main_menu.id,function(feat)
+    setting_ini:write()
+    menu.notify("Saved Config!", "JJS.Snowballs")
+end)
 
 reset_thread = function()
+    print(detect_mode)
     if detect_mode == 0 then
         detection_thread = menu.create_thread(function()
             menu.notify("Restarted detection thread: "..detect_mode_list[detect_mode], "JJS.Snowballs")
@@ -185,13 +208,15 @@ menu.create_thread(function()
                 if snowball_mode == 1 then
                     system.yield(250)
                     if ped.is_ped_a_player(data.id) then
-                        for i1=1, player.player_count()-1 do
-                            if player.get_player_ped(i1) == data.id and player.get_player_ped(i1) ~= player.player_ped() then
+                        print("Hit a player")
+                        for i1=0, 31 do
+                            if player.is_player_valid(i1) and player.get_player_ped(i1) == data.id and player.get_player_ped(i1) ~= player.player_ped() then
                                 local curr_name = player.get_player_name(i1)
                                 local curr_scid = player.get_player_scid(i1)
                                 native.call(0x2206BF9A37B7F724, "REDMISTOUT", 2000, false)
 
                                 if i1 == player.player_id() then
+                                    print("Saved player from accidental self-kick lol")
                                     break
                                 end
 
