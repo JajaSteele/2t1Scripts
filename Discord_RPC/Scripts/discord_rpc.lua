@@ -56,7 +56,10 @@ end
 
 
 
-local exists, large_text_mode = setting_ini:get_i("Config", "large_text_mode") or false, 1
+local exists, large_text_mode = setting_ini:get_i("Config", "large_text_mode")
+if large_text_mode == nil then
+    large_text_mode = 1
+end
 local large_text_mode_list = {
     [0] = "Player Info",
     [1] = "Health/Armor/Ammo"
@@ -65,13 +68,17 @@ local large_text_mode_list = {
 local large_text_selector = menu.add_feature("Large Text Display", "autoaction_value_str", main_menu.id,function(feat)
     large_text_mode = feat.value
     setting_ini:set_i("Config", "large_text_mode", feat.value)
-end)
+    end)
 large_text_selector:set_str_data(large_text_mode_list)
 large_text_selector.value = large_text_mode
+print("RPC Config: large_text_mode = "..large_text_selector.value)
 
 
 
-local exists, update_frequency = setting_ini:get_i("Config", "update_frequency") or false, 1
+local exists, update_frequency = setting_ini:get_i("Config", "update_frequency")
+if update_frequency == nil then
+    update_frequency = 1
+end
 local update_frequency_list = {
     [0] = "1250",
     [1] = "2500",
@@ -85,6 +92,7 @@ local update_frequency_selector = menu.add_feature("Update Frequency (ms)", "aut
 end)
 update_frequency_selector:set_str_data(update_frequency_list)
 update_frequency_selector.value = update_frequency
+print("RPC Config: update_frequency = "..update_frequency_selector.value)
 
 
 
