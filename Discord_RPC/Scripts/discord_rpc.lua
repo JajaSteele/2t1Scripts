@@ -136,9 +136,9 @@ menu.create_thread(function()
         local veh =  ped.get_vehicle_ped_is_using(player.player_ped())
         
         if veh and veh ~= 0 then
-            data.details = "Using a vehicle: "..vehicle.get_vehicle_brand(veh).." "..vehicle.get_vehicle_model(veh)
+            data.details = "Using a vehicle: "..(vehicle.get_vehicle_brand(veh) or "").." "..(vehicle.get_vehicle_model(veh) or "Unknown")
         else
-            data.details = "On foot with weapon: "..weapon.get_weapon_name(ped.get_current_ped_weapon(player.player_ped()))
+            data.details = "On foot with weapon: "..weapon.get_weapon_name(ped.get_current_ped_weapon(player.player_ped()) or "Unknown")
         end
                 
         if native.call(0x10D0A8F259E93EC9):__tointeger() == 1 then

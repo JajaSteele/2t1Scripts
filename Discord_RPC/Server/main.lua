@@ -138,20 +138,20 @@ while true do
     discordRPC.updatePresence(presence)
     timer.sleep(1000)
     if last_update == os.time()-20 then
-        log("No update for 20! Assuming GTA is closed, quitting server in 20s.", log_lvl.warn)
+        log("No update for 60s! Assuming GTA is closed, quitting server in 60s.", log_lvl.warn)
         presence = {
             state = "Quitting Server..",
             details = "RPC Server Timeout"
         }
     end
     if last_update < os.time()-40 then
-        log("No update for 40s! Quitting server!", log_lvl.error)
+        log("No update for 120s! Quitting server!", log_lvl.error)
         timer.sleep(1000)
         server:close()
         return
     end
     if os.time() >= grace_period_end and not grace_period_reached then
-        log({"Auto-Close grace period terminated!", "The server will now auto-close if no more requests are received for 20s"}, log_lvl.warn)
+        log({"Auto-Close grace period terminated!", "The server will now auto-close if no more requests are received for 120s"}, log_lvl.warn)
         grace_period_reached = true
     end
 end
