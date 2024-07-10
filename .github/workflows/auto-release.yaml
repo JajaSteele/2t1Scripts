@@ -18,7 +18,7 @@ jobs:
       - uses: superjaja05/action-zip@v1
         with:
           dest: pack.zip
-          files: ./Airline Script/JJS.Airline.lua, ./Taxi Script/JJS.Taxi.lua, ./Translator/JJS.Translator.lua, ./Pet/JJS.Pet.lua, ./Avenger utils/JJS.Avenger.Utils.lua, ./Airtaxi Script/JJS.Airtaxi.lua, ./Cargobob/JJS.Cargobob.lua, ./Private Boat/JJS.Boat.lua, ./Autokick/JJS.Autokick.lua, ./Autopilot/JJS.Autopilot.lua, ./VehicleTP/JJS.VehicleTP.lua, ./Missile/JJS.Missile.lua, ./_Color Override/JJS_Color_Override.ini, ./KosatkaAP/JJS.KosatkaAP.lua, ./keybind_viewer.lua, ./Misc/CargobobSpawnUtils.lua", ./Snowballs/JJS.Snowballs.lua
+          files: ./Airline Script/JJS.Airline.lua, ./Taxi Script/JJS.Taxi.lua, ./Translator/JJS.Translator.lua, ./Pet/JJS.Pet.lua, ./Avenger utils/JJS.Avenger.Utils.lua, ./Airtaxi Script/JJS.Airtaxi.lua, ./Cargobob/JJS.Cargobob.lua, ./Private Boat/JJS.Boat.lua, ./Autokick/JJS.Autokick.lua, ./Autopilot/JJS.Autopilot.lua, ./VehicleTP/JJS.VehicleTP.lua, ./Missile/JJS.Missile.lua, ./_Color Override/JJS_Color_Override.ini, ./KosatkaAP/JJS.KosatkaAP.lua, ./keybind_viewer.lua, ./Misc/CargobobSpawnUtils.lua", ./Snowballs/JJS.Snowballs.lua, ./LobbyUtils/JJS.LobbyUtils.lua
           
       - uses: actions/upload-artifact@v1
         with:
@@ -67,6 +67,7 @@ jobs:
             ./keybind_viewer.lua
             ./Misc/CargobobSpawnUtils.lua
             ./Snowballs/JJS.Snowballs.lua
+            ./LobbyUtils/JJS.LobbyUtils.lua
             pack.zip
 
 
