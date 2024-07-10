@@ -1,3 +1,51 @@
+if not menu.is_trusted_mode_enabled(1 << 2) then
+    menu.notify("JJS LobbyUtils requires \"Natives\" Trust flag to work", "Trust Error", nil, 0x0000FF)
+    menu.exit()
+end
+
+local function question(y,n)
+    while true do
+        if controls.is_control_pressed(0, y) then
+            return true
+        elseif controls.is_control_pressed(0, n) then
+            return false
+        end
+        system.yield(0)
+    end
+end
+
+if menu.is_trusted_mode_enabled(1 << 3) then
+    menu.create_thread(function()
+        local url = "https://raw.githubusercontent.com/JJS-Laboratories/2t1Scripts/main/LobbyUtils/JJS.LobbyUtils.lua"
+        local code, body, headers = web.request(url)
+
+        local path = utils.get_appdata_path("PopstarDevs","").."\\2Take1Menu\\scripts\\JJS.LobbyUtils.lua"
+
+        local file1 = io.open(path, "r")
+        local curr_file = file1:read("*a")
+        file1:close()
+
+        if curr_file ~= body and code == 200 and body:len() > 0 then
+            menu.notify("Update detected!\nPress 'Enter' to download or 'Backspace' to cancel\n#FF00AAFF#To disable updates, disable Trusted HTTP","JJS LobbyUtils",nil,0x00AAFF)
+            local choice = question(201, 202)
+            if choice then
+                menu.notify("Downloaded! Please reload the script","JJS LobbyUtils",nil,0x00FF00)
+                local file2 = io.open(path, "w")
+                file2:write(body)
+                file2:close()
+                menu.exit()
+            else
+                menu.notify("Update Cancelled","JJS LobbyUtils",nil,0x0000FF)
+            end
+        else
+            menu.notify("No update detected\n#FF00AAFF#To disable updates, disable Trusted HTTP","JJS LobbyUtils",nil,0xFF00FF)
+            print("Update HTTP for JJS LobbyUtils: "..code)
+        end
+    end)
+end
+
+
+
 local mx = 1920
 local my = 1080
 
