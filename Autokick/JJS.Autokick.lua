@@ -86,7 +86,7 @@ if sp then
     local function save_list()
         local template_file = utils.get_appdata_path("PopstarDevs","").."\\2Take1Menu\\scripts\\JJS.Autokick.save.txt"
         local file1 = io.open(template_file,"w")
-        file1:write(sp.dump(kick_list)) 
+        file1:write(sp.dump(kick_list, {indent=" ", compact=false})) 
         file1:close()
     end
 
