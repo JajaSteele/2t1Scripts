@@ -93,7 +93,7 @@ local join_leave_func = function()
         if player_count >= max_player and not block_all_feat.on then
             block_all_feat.on = true
             menu.notify("Limit Reached: "..player_count.." >= "..max_player..", Block-All Enabled!", "JJS.LobbyLimiter")
-        elseif block_all_feat.on then
+        elseif player_count < max_player and block_all_feat.on then
             block_all_feat.on = false
             menu.notify("Below limit: "..player_count.." < "..max_player..", Block-All Disabled!", "JJS.LobbyLimiter")
         end
