@@ -93,6 +93,17 @@ local function is_non_ped_allowed(mode)
     end
 end
 
+local function request_control(_ent)
+    local attempts = 75
+    if not network.has_control_of_entity(_ent) then
+        network.request_control_of_entity(_ent)
+        while (not network.has_control_of_entity(_ent)) and (attempts > 0) do
+            system.yield(0)
+            attempts = attempts-1
+        end
+    end
+end
+
 local exists, detect_mode = setting_ini:get_i("Config", "default_detector")
 if not exists then
     detect_mode = 1
@@ -234,10 +245,12 @@ menu.create_thread(function()
                             end
                         end
                         system.yield(500)
+                        request_control(data.id)
                         native.call(0xDE564951F95E09ED, data.id, true, true)
                         system.yield(1500)
                         entity.delete_entity(data.id)
                     else
+                        request_control(data.id)
                         ped.set_ped_to_ragdoll(data.id, 10000, 10000, 0)
                         native.call(0x2206BF9A37B7F724, "lectroKERSOut", 500, false)
                         system.yield(500)
