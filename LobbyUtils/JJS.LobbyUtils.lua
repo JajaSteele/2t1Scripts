@@ -136,12 +136,14 @@ local misc_menu = menu.add_feature("Miscellaneous","parent",main_menu.id)
 local host_display = menu.add_feature("Host Display","toggle", misc_menu.id,function(feat)
     while feat.on do
         if native.call(0x83CD99A1E6061AB5):__tointeger() == 1 then
+            ui.set_text_outline(true)
             ui.set_text_color(128,255,128,255)
             ui.set_text_scale(0.5)
             draw_text(2, 1080-55-30, "S")
         end
         
         if network.network_is_host() then
+            ui.set_text_outline(true)
             ui.set_text_color(128,192,255,255)
             ui.set_text_scale(0.5)
             draw_text(0, 1080-55, "H")
@@ -158,12 +160,14 @@ local god_display = menu.add_feature("Godmode Display","toggle", misc_menu.id,fu
     local veh_god = menu.get_feature_by_hierarchy_key("local.vehicle_options.god")
     while feat.on do
         if pl_god.on then
+            ui.set_text_outline(true)
             ui.set_text_color(255,16,64,255)
             ui.set_text_scale(0.5)
             draw_text(1, 1080-55-90-15, "P")
         end
 
         if veh_god.on then
+            ui.set_text_outline(true)
             ui.set_text_color(255,16,64,255)
             ui.set_text_scale(0.5)
             draw_text(1, 1080-55-60-15, "V")
