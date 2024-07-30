@@ -562,6 +562,10 @@ local kill_toreador = menu.add_feature("Kill Toreador", "action", ap_toreador.id
     entity.delete_entity(toreador)
 end)
 
+local boat_ap_mode = menu.add_feature("Pick-up Location", "autoaction_value_str", ap_boat.id, function()
+end)
+boat_ap_mode:set_str_data({"Nearest Shore", "Player"})
+
 local spawn_boat_ap = menu.add_feature("Call Boat", "action", ap_boat.id, function(ft)
     if kosatka_registered then
         local sub_pos = entity.get_entity_coords(sub_veh)
@@ -571,9 +575,15 @@ local spawn_boat_ap = menu.add_feature("Call Boat", "action", ap_boat.id, functi
         local player_ped = player.get_player_ped(local_player)
         local pl_pos = player.get_player_coords(local_player)
 
-        local closest_node = find_closest_beach(pl_pos)
+        local closest_node
+        local spawn_pos
 
-        local spawn_pos = front_of_pos(sub_pos, v3(0,0,vector_to_heading(closest_node, sub_pos)), 90)
+        if boat_ap_mode.value == 0 then
+            closest_node = find_closest_beach(pl_pos)
+            spawn_pos = front_of_pos(sub_pos, v3(0,0,vector_to_heading(closest_node, sub_pos)), 90)
+        elseif boat_ap_mode.value == 1 then
+            spawn_pos = front_of_pos(sub_pos, v3(0,0,vector_to_heading(pl_pos, sub_pos)), 90)
+        end
         request_model(boat_hash)
         boat = vehicle.create_vehicle(boat_hash, v3(spawn_pos.x, spawn_pos.y, 0.0), sub_dir, true, false)
         entity.set_entity_as_mission_entity(boat, true, true)
@@ -617,24 +627,33 @@ local spawn_boat_ap = menu.add_feature("Call Boat", "action", ap_boat.id, functi
         native.call(0x1913FE4CBF41C463, boat_pilot, 255, true)
         native.call(0x1913FE4CBF41C463, boat_pilot, 251, true)
 
-        print("Closest Node: X"..closest_node.x.." Y"..closest_node.y.." Z"..closest_node.z)
+        if boat_ap_mode.value == 0 then
+            print("Closest Node: X"..closest_node.x.." Y"..closest_node.y.." Z"..closest_node.z)
 
-        entity.delete_entity(boat_dest_ent)
+            entity.delete_entity(boat_dest_ent)
 
-        local dest_ent_hash = gameplay.get_hash_key("prop_dock_float_1b")
-        boat_dest_ent = object.create_object(dest_ent_hash, closest_node, true, true)
+            local dest_ent_hash = gameplay.get_hash_key("prop_dock_float_1b")
+            boat_dest_ent = object.create_object(dest_ent_hash, closest_node, true, true)
 
-        blips.boat_dest_ent = ui.add_blip_for_entity(boat_dest_ent)
-        ui.set_blip_sprite(blips.boat_dest_ent, 432)
+            blips.boat_dest_ent = ui.add_blip_for_entity(boat_dest_ent)
+            ui.set_blip_sprite(blips.boat_dest_ent, 432)
 
-        native.call(0xF9113A30DE5C6670, "STRING")
-        native.call(0x6C188BE134E074AA, "Boat Pick-up Location")
-        native.call(0xBC38B49BCB83BC9B, blips.boat_dest_ent)
+            native.call(0xF9113A30DE5C6670, "STRING")
+            native.call(0x6C188BE134E074AA, "Boat Pick-up Location")
+            native.call(0xBC38B49BCB83BC9B, blips.boat_dest_ent)
 
-        ai.task_vehicle_follow(boat_pilot, boat, boat_dest_ent, 30.0, boat_drive, 15)
+            ai.task_vehicle_follow(boat_pilot, boat, boat_dest_ent, 30.0, boat_drive, 15)
+        elseif boat_ap_mode.value == 1 then
+            ai.task_vehicle_follow(boat_pilot, boat, player_ped, 30.0, boat_drive, 25)
+        end
         menu.create_thread(function()
             local boat = boat
-            local dest = closest_node
+            local dest
+            if boat_ap_mode.value == 0 then
+                dest = closest_node
+            elseif boat_ap_mode.value == 1 then
+                dest = entity.get_entity_coords(player_ped)
+            end
             local player_ped = player_ped
             while true do
                 system.yield(0)
@@ -644,7 +663,7 @@ local spawn_boat_ap = menu.add_feature("Call Boat", "action", ap_boat.id, functi
             end
 
             local flare_gun = gameplay.get_hash_key("weapon_flaregun")
-            gameplay.shoot_single_bullet_between_coords(closest_node+v3(0,0,5), closest_node+v3(0,0,10), 0, flare_gun, player_ped, false, false, 0.25)
+            gameplay.shoot_single_bullet_between_coords(dest+v3(0,0,5), dest+v3(0,0,10), 0, flare_gun, player_ped, false, false, 0.25)
 
             local counter = 0
             while true do
@@ -659,8 +678,10 @@ local spawn_boat_ap = menu.add_feature("Call Boat", "action", ap_boat.id, functi
                 end
             end
 
-            request_control(boat_dest_ent)
-            entity.delete_entity(boat_dest_ent)
+            if boat_ap_mode.value == 0 then
+                request_control(boat_dest_ent)
+                entity.delete_entity(boat_dest_ent)
+            end
 
 
             local sub_pos = entity.get_entity_coords(sub_veh)
@@ -706,7 +727,7 @@ local spawn_boat_ap = menu.add_feature("Call Boat", "action", ap_boat.id, functi
         menu.notify("#FF00AAFF#Kosatka isn't registered properly!","JJS.KosatkaAP", nil, 0x0000FF)
     end
 end)
-spawn_boat_ap.hint = "Spawns a boat that goes to nearest shore, then back to kosatka once you're seated"
+spawn_boat_ap.hint = "Spawns a boat that goes to nearest shore/your position, then back to kosatka once you're seated"
 
 local kill_boat = menu.add_feature("Kill Boat", "action", ap_boat.id, function(ft)
     entity.delete_entity(vehicle.get_ped_in_vehicle_seat(boat, -1) or 0)
@@ -715,7 +736,11 @@ local kill_boat = menu.add_feature("Kill Boat", "action", ap_boat.id, function(f
     entity.delete_entity(boat_dest_ent2)
 end)
 
-local spawn_extboat_ap = menu.add_feature("Boat to WP", "action", ap_boat2.id, function(ft)
+local extboat_ap_mode = menu.add_feature("Deposit Location", "autoaction_value_str", ap_boat2.id, function()
+end)
+extboat_ap_mode:set_str_data({"Waypoint", "Nearest Shore"})
+
+local spawn_extboat_ap = menu.add_feature("Spawn Boat", "action", ap_boat2.id, function(ft)
     if kosatka_registered then
         local sub_pos = entity.get_entity_coords(sub_veh)
         local sub_dir = entity.get_entity_heading(sub_veh)
@@ -785,16 +810,22 @@ local spawn_extboat_ap = menu.add_feature("Boat to WP", "action", ap_boat2.id, f
                 end
             end
 
-            local wp = ui.get_waypoint_coord()
+            local wp3
 
-            if wp == v2(16000.0, 16000.0) then
-                repeat
-                    system.yield(0)
-                    wp = ui.get_waypoint_coord()
-                until wp ~= v2(16000.0, 16000.0)
+            if extboat_ap_mode.value == 0 then
+                local wp = ui.get_waypoint_coord()
+
+                if wp == v2(16000.0, 16000.0) then
+                    repeat
+                        system.yield(0)
+                        wp = ui.get_waypoint_coord()
+                    until wp ~= v2(16000.0, 16000.0)
+                end
+
+                wp3 = v3(wp.x, wp.y, 0)
+            elseif extboat_ap_mode.value == 1 then
+                wp3 = find_closest_beach(entity.get_entity_coords(player_ped))
             end
-
-            local wp3 = v3(wp.x, wp.y, 0)
 
             entity.delete_entity(extboat_dest_ent)
 
@@ -813,7 +844,7 @@ local spawn_extboat_ap = menu.add_feature("Boat to WP", "action", ap_boat2.id, f
 
             while true do
                 system.yield(0)
-                if entity.get_entity_coords(extboat):magnitude(entity.get_entity_coords(extboat_dest_ent)) < 10 and get_taken_seats(extboat) == 1 then
+                if entity.get_entity_coords(extboat):magnitude(entity.get_entity_coords(extboat_dest_ent)) < 15 and get_taken_seats(extboat) == 1 then
                     break
                 end
             end
